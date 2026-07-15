@@ -6,7 +6,7 @@ import { useApp } from "@/lib/store";
 import { Heart, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/favorites")({
-  head: () => ({ meta: [{ title: "Избранное — Gül Market" }] }),
+  head: () => ({ meta: [{ title: "Избранное — ReFlowers" }] }),
   component: Favorites,
 });
 

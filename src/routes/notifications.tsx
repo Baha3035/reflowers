@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Bell, Heart, MessageCircle, Package, ShoppingBag, TrendingDown, Truck } from "lucide-react";
 
 export const Route = createFileRoute("/notifications")({
-  head: () => ({ meta: [{ title: "Уведомления — Gül Market" }] }),
+  head: () => ({ meta: [{ title: "Уведомления — ReFlowers" }] }),
   component: Notifications,
 });
 

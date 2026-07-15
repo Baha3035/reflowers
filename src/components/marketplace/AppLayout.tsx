@@ -22,9 +22,9 @@ export function TopHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 md:px-8">
         <Link to="/" className="flex items-center gap-2">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-            <span className="font-display text-lg font-semibold">G</span>
+            <span className="font-display text-lg font-semibold lowercase">re</span>
           </div>
-          <span className="font-display text-xl font-semibold tracking-tight text-foreground">Gül<span className="text-primary">.</span>Market</span>
+          <span className="font-display text-xl font-semibold tracking-tight text-foreground">Re<span className="text-primary">Flowers</span></span>
         </Link>
 
         <button className="ml-2 hidden items-center gap-1 rounded-full bg-muted px-3 py-1.5 text-sm text-foreground/80 transition hover:bg-muted/70 sm:flex">

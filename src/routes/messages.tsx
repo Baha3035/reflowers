@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/messages")({
-  head: () => ({ meta: [{ title: "Сообщения — Gül Market" }] }),
+  head: () => ({ meta: [{ title: "Сообщения — ReFlowers" }] }),
   component: Messages,
 });
 

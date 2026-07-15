@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (s) => z.object({ id: z.string().optional() }).parse(s),
-  head: () => ({ meta: [{ title: "Оформление заказа — Gül Market" }] }),
+  head: () => ({ meta: [{ title: "Оформление заказа — ReFlowers" }] }),
   component: Checkout,
 });
 
