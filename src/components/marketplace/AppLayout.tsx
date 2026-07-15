@@ -1,9 +1,10 @@
-import { Link } from "@tanstack/react-router";
-import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search } from "lucide-react";
-import { useApp } from "@/lib/store";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft } from "lucide-react";
+import { useApp, CITIES, type City } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function AppLayout({ children, hideBottomNav = false }: { children: ReactNode; hideBottomNav?: boolean }) {
   return (
@@ -16,29 +17,50 @@ export function AppLayout({ children, hideBottomNav = false }: { children: React
 }
 
 export function TopHeader() {
-  const { language, setLanguage } = useApp();
+  const { language, setLanguage, city, setCity, t } = useApp();
+  const router = useRouter();
+  const pathname = useRouterState({ select: s => s.location.pathname });
+  const showBack = pathname !== "/";
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 md:px-8">
+        {showBack && (
+          <button
+            onClick={() => { try { router.history.back(); } catch { router.navigate({ to: "/" }); } }}
+            aria-label={t("back")}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted transition hover:bg-muted/70"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+        )}
         <Link to="/" className="flex items-center gap-2">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
             <span className="font-display text-lg font-semibold lowercase">re</span>
           </div>
-          <span className="font-display text-xl font-semibold tracking-tight text-foreground">Re<span className="text-primary">Flowers</span></span>
+          <span className="hidden font-display text-xl font-semibold tracking-tight text-foreground sm:inline">Re<span className="text-primary">Flowers</span></span>
         </Link>
 
-        <button className="ml-2 hidden items-center gap-1 rounded-full bg-muted px-3 py-1.5 text-sm text-foreground/80 transition hover:bg-muted/70 sm:flex">
-          <MapPin className="h-4 w-4 text-primary" /> Бишкек <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="ml-1 hidden items-center gap-1 rounded-full bg-muted px-3 py-1.5 text-sm text-foreground/80 transition hover:bg-muted/70 sm:flex">
+              <MapPin className="h-4 w-4 text-primary" /> {city} <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-40">
+            {CITIES.map(c => (
+              <DropdownMenuItem key={c} onClick={() => setCity(c as City)} className={cn(city === c && "font-semibold text-primary")}>{c}</DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Desktop nav */}
         <nav className="ml-6 hidden items-center gap-1 md:flex">
           {[
-            { to: "/", label: "Главная" },
-            { to: "/catalog", label: "Каталог" },
-            { to: "/messages", label: "Сообщения" },
-            { to: "/favorites", label: "Избранное" },
-            { to: "/shop-dashboard", label: "Для магазинов" },
+            { to: "/", label: t("nav.home") },
+            { to: "/catalog", label: t("nav.catalog") },
+            { to: "/messages", label: t("nav.messages") },
+            { to: "/favorites", label: t("nav.favorites") },
+            { to: "/shop-dashboard", label: t("nav.shops") },
           ].map(l => (
             <Link key={l.to} to={l.to} className="rounded-full px-3 py-1.5 text-sm text-foreground/70 transition hover:bg-muted hover:text-foreground" activeProps={{ className: "bg-muted text-foreground font-medium" }} activeOptions={{ exact: l.to === "/" }}>
               {l.label}
@@ -47,20 +69,33 @@ export function TopHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1.5">
+          {/* Mobile city button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1.5 text-xs font-medium text-foreground/80 sm:hidden">
+                <MapPin className="h-3.5 w-3.5 text-primary" /> {city}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-40">
+              {CITIES.map(c => (
+                <DropdownMenuItem key={c} onClick={() => setCity(c as City)} className={cn(city === c && "font-semibold text-primary")}>{c}</DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <select value={language} onChange={e => setLanguage(e.target.value as "ru" | "ky" | "en")} className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground/80">
             <option value="ru">RU</option>
             <option value="ky">KG</option>
             <option value="en">EN</option>
           </select>
-          <Link to="/notifications" className="grid h-9 w-9 place-items-center rounded-full bg-muted transition hover:bg-muted/70" aria-label="Уведомления">
+          <Link to="/notifications" className="hidden h-9 w-9 place-items-center rounded-full bg-muted transition hover:bg-muted/70 sm:grid" aria-label="Notifications">
             <Bell className="h-4 w-4" />
           </Link>
-          <Link to="/profile" className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90" aria-label="Профиль">
+          <Link to="/profile" className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90" aria-label={t("nav.profile")}>
             <User className="h-4 w-4" />
           </Link>
           <Link to="/sell" className="ml-1 hidden md:block">
             <Button size="sm" className="rounded-full">
-              <Plus className="h-4 w-4" /> Продать
+              <Plus className="h-4 w-4" /> {t("header.sell")}
             </Button>
           </Link>
         </div>
@@ -70,12 +105,13 @@ export function TopHeader() {
 }
 
 export function BottomNav() {
+  const { t } = useApp();
   const items = [
-    { to: "/", label: "Главная", icon: Home, exact: true },
-    { to: "/catalog", label: "Каталог", icon: Grid3x3 },
-    { to: "/sell", label: "Продать", icon: Plus, primary: true },
-    { to: "/messages", label: "Сообщения", icon: MessageCircle },
-    { to: "/profile", label: "Профиль", icon: User },
+    { to: "/", label: t("nav.home"), icon: Home, exact: true },
+    { to: "/catalog", label: t("nav.catalog"), icon: Grid3x3 },
+    { to: "/sell", label: t("nav.sell"), icon: Plus, primary: true },
+    { to: "/messages", label: t("nav.messages"), icon: MessageCircle },
+    { to: "/profile", label: t("nav.profile"), icon: User },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 pb-safe backdrop-blur-md md:hidden">
