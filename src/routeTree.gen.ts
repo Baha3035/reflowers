@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShopDashboardRouteImport } from './routes/shop-dashboard'
 import { Route as SellRouteImport } from './routes/sell'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -20,6 +21,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIdRouteImport } from './routes/shop.$id'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
 
+const ShopDashboardRoute = ShopDashboardRouteImport.update({
+  id: '/shop-dashboard',
+  path: '/shop-dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SellRoute = SellRouteImport.update({
   id: '/sell',
   path: '/sell',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
+  '/shop-dashboard': typeof ShopDashboardRoute
   '/listing/$id': typeof ListingIdRoute
   '/shop/$id': typeof ShopIdRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
+  '/shop-dashboard': typeof ShopDashboardRoute
   '/listing/$id': typeof ListingIdRoute
   '/shop/$id': typeof ShopIdRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
+  '/shop-dashboard': typeof ShopDashboardRoute
   '/listing/$id': typeof ListingIdRoute
   '/shop/$id': typeof ShopIdRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/sell'
+    | '/shop-dashboard'
     | '/listing/$id'
     | '/shop/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/sell'
+    | '/shop-dashboard'
     | '/listing/$id'
     | '/shop/$id'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/sell'
+    | '/shop-dashboard'
     | '/listing/$id'
     | '/shop/$id'
   fileRoutesById: FileRoutesById
@@ -156,12 +168,20 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
   SellRoute: typeof SellRoute
+  ShopDashboardRoute: typeof ShopDashboardRoute
   ListingIdRoute: typeof ListingIdRoute
   ShopIdRoute: typeof ShopIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shop-dashboard': {
+      id: '/shop-dashboard'
+      path: '/shop-dashboard'
+      fullPath: '/shop-dashboard'
+      preLoaderRoute: typeof ShopDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sell': {
       id: '/sell'
       path: '/sell'
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
   SellRoute: SellRoute,
+  ShopDashboardRoute: ShopDashboardRoute,
   ListingIdRoute: ListingIdRoute,
   ShopIdRoute: ShopIdRoute,
 }
