@@ -102,20 +102,13 @@ function Sell() {
 
           {/* Advanced (optional) */}
           <button onClick={() => setShowAdvanced(s => !s)} className="flex w-full items-center justify-between rounded-2xl bg-muted px-3 py-2.5 text-xs font-medium text-foreground/70">
-            Название, описание, доставка — необязательно
+            Название и описание — необязательно
             <ChevronDown className={cn("h-4 w-4 transition", showAdvanced && "rotate-180")} />
           </button>
           {showAdvanced && (
             <div className="space-y-3">
               <Input placeholder="Название (иначе AI придумает)" />
               <Input placeholder="Описание (необязательно)" />
-              <div className="space-y-2">
-                {["Самовывоз — бесплатно", "Курьерская доставка — 400 сом", "Доставка за час — 550 сом"].map(o => (
-                  <label key={o} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border bg-background p-2.5 text-sm">
-                    <input type="checkbox" defaultChecked className="accent-primary" /><span>{o}</span>
-                  </label>
-                ))}
-              </div>
             </div>
           )}
 
@@ -152,7 +145,7 @@ function Sell() {
           </div>
 
           <div className="rounded-2xl bg-accent p-2.5 text-[11px] text-accent-foreground">
-            Объявление активно 24 часа. По умолчанию: самовывоз + курьер, торг возможен, номер скрыт.
+            Объявление активно 24 часа. Место встречи вы согласуете с покупателем в чате.
           </div>
         </div>
       </div>
