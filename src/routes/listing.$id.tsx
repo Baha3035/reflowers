@@ -4,7 +4,7 @@ import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
 import { LISTINGS, REVIEWS, formatSom, getListing, getSeller } from "@/lib/mock-data";
 import { useApp } from "@/lib/store";
-import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, ShieldCheck, Star, Truck } from "lucide-react";
+import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, ShieldCheck, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -88,7 +88,7 @@ function ListingPage() {
               <Info label="Размер" value={listing.size} />
               {listing.count && <Info label="Количество" value={`${listing.count} шт.`} />}
               <Info label="Район" value={listing.district} icon={<MapPin className="h-3.5 w-3.5" />} />
-              <Info label="Доставка" value={listing.delivery ? "Доступна" : "Только самовывоз"} icon={<Truck className="h-3.5 w-3.5" />} />
+              <Info label="Встреча" value="Согласуется в чате" />
             </div>
 
             {listing.hoursLeft && (
