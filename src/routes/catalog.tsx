@@ -6,26 +6,53 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { LISTINGS, DISTRICTS } from "@/lib/mock-data";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LayoutGrid, List, MapPin } from "lucide-react";
+import type { TKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/catalog")({
   head: () => ({ meta: [{ title: "Каталог букетов — ReFlowers" }, { name: "description", content: "Все букеты и композиции Бишкека в одном каталоге." }] }),
   component: Catalog,
 });
 
-const SORTS = ["Рекомендуемые", "Сначала новые", "Сначала дешевле", "Сначала дороже", "Ближе ко мне", "Самые популярные"];
+const SORTS: { id: string; key: TKey }[] = [
+  { id: "recommended", key: "sort.recommended" },
+  { id: "new", key: "sort.new" },
+  { id: "cheap", key: "sort.cheap" },
+  { id: "expensive", key: "sort.expensive" },
+  { id: "near", key: "sort.near" },
+  { id: "popular", key: "sort.popular" },
+];
 const PRICES = ["До 1000", "1000–3000", "3000–10000", "10000–20000", "От 20000"];
 const FLOWERS = ["Розы", "Пионы", "Тюльпаны", "Хризантемы", "Гортензии", "Лилии", "Ромашки", "Смешанные"];
 const COLORS = ["Красные", "Белые", "Розовые", "Жёлтые", "Фиолетовые", "Разноцветные"];
 const OCCASIONS = ["Свидание", "День рождения", "Извинение", "Свадьба", "Для мамы", "Для коллеги", "Без повода"];
-const DELIVERY = ["Самовывоз", "Доставка продавцом", "Курьерская доставка", "За час"];
 
 function Catalog() {
-  const { sellerMode, setSellerMode } = useApp();
+  const { sellerMode, setSellerMode, t, city } = useApp();
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [sort, setSort] = useState(SORTS[0]);
-  const listings = LISTINGS.filter(l => l.sellerType === sellerMode);
+  const [sortId, setSortId] = useState(SORTS[0].id);
+
+  // Rough "distance" map — for demo we just prefer some districts for Бишкек
+  const listings = useMemo(() => {
+    const base = LISTINGS.filter(l => l.sellerType === sellerMode);
+    const arr = [...base];
+    switch (sortId) {
+      case "cheap": arr.sort((a, b) => a.price - b.price); break;
+      case "expensive": arr.sort((a, b) => b.price - a.price); break;
+      case "new": arr.sort((a, b) => (b.hoursLeft ?? 24) - (a.hoursLeft ?? 24)); break;
+      case "popular": arr.sort((a, b) => (b.oldPrice ?? 0) - (a.oldPrice ?? 0)); break;
+      case "near": {
+        const nearOrder = ["Центр", "Джал", "Асанбай", "Восток-5", "12 микрорайон", "Тунгуч", "Южные микрорайоны", "Аламедин-1"];
+        arr.sort((a, b) => nearOrder.indexOf(a.district) - nearOrder.indexOf(b.district));
+        break;
+      }
+      case "recommended":
+      default:
+        arr.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (b.oldPrice ?? 0) - (a.oldPrice ?? 0));
+    }
+    return arr;
+  }, [sellerMode, sortId, city]);
 
   return (
     <AppLayout>
@@ -36,27 +63,26 @@ function Catalog() {
           <div className="inline-flex rounded-full bg-muted p-1">
             {(["private", "shop"] as const).map(m => (
               <button key={m} onClick={() => setSellerMode(m)} className={cn("rounded-full px-3.5 py-1.5 text-xs font-medium transition md:text-sm", sellerMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>
-                {m === "private" ? "Частные" : "Магазины"}
+                {m === "private" ? t("catalog.private") : t("catalog.shops")}
               </button>
             ))}
           </div>
 
-          <select value={sort} onChange={e => setSort(e.target.value)} className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium md:text-sm">
-            {SORTS.map(s => <option key={s}>{s}</option>)}
+          <select value={sortId} onChange={e => setSortId(e.target.value)} className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium md:text-sm">
+            {SORTS.map(s => <option key={s.id} value={s.id}>{t(s.key)}</option>)}
           </select>
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button size="sm" variant="secondary" className="rounded-full">Фильтры</Button>
+              <Button size="sm" variant="secondary" className="rounded-full">{t("catalog.filters")}</Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-3xl">
-              <SheetHeader><SheetTitle>Фильтры</SheetTitle></SheetHeader>
+              <SheetHeader><SheetTitle>{t("catalog.filters")}</SheetTitle></SheetHeader>
               <FilterGroup title="Цена" opts={PRICES.map(p => p + " сом")} />
               <FilterGroup title="Свежесть" opts={["Получены сегодня", "1 день", "2 дня", "Новые от магазина"]} />
               <FilterGroup title="Тип цветов" opts={FLOWERS} />
               <FilterGroup title="Цвет" opts={COLORS} />
               <FilterGroup title="Повод" opts={OCCASIONS} />
-              <FilterGroup title="Доставка" opts={DELIVERY} />
               <FilterGroup title="Район" opts={DISTRICTS} />
               <div className="sticky bottom-0 mt-4 flex gap-2 bg-background/95 py-3 backdrop-blur">
                 <Button variant="outline" className="flex-1 rounded-full">Сбросить</Button>
@@ -65,10 +91,10 @@ function Catalog() {
             </SheetContent>
           </Sheet>
 
-          <Button size="sm" variant="ghost" className="rounded-full text-xs"><MapPin className="h-3.5 w-3.5" /> На карте</Button>
+          <Button size="sm" variant="ghost" className="rounded-full text-xs"><MapPin className="h-3.5 w-3.5" /> {t("catalog.onMap")}</Button>
 
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{listings.length} объявлений</span>
+            <span className="text-xs text-muted-foreground">{listings.length} {t("catalog.count")}</span>
             <div className="inline-flex rounded-full bg-muted p-1">
               <button onClick={() => setView("grid")} className={cn("grid h-7 w-7 place-items-center rounded-full", view === "grid" && "bg-card shadow-sm")}><LayoutGrid className="h-3.5 w-3.5" /></button>
               <button onClick={() => setView("list")} className={cn("grid h-7 w-7 place-items-center rounded-full", view === "list" && "bg-card shadow-sm")}><List className="h-3.5 w-3.5" /></button>
@@ -76,8 +102,8 @@ function Catalog() {
           </div>
         </div>
 
-        <div className={cn("mt-5", view === "grid" ? "grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5" : "flex flex-col gap-3")}>
-          {listings.map(l => <ListingCard key={l.id} listing={l} compact={view === "list"} />)}
+        <div className={cn("mt-5", view === "grid" ? "grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5" : "flex flex-col gap-2 md:gap-2.5")}>
+          {listings.map(l => <ListingCard key={l.id} listing={l} horizontal={view === "list"} />)}
         </div>
       </div>
     </AppLayout>
