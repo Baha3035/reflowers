@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const { sellerMode, setSellerMode } = useApp();
+  const { sellerMode, setSellerMode, t } = useApp();
   const listings = LISTINGS.filter(l => l.sellerType === sellerMode);
   const nearby = LISTINGS.slice(0, 8);
   const urgent = LISTINGS.filter(l => l.urgent).slice(0, 4);
@@ -25,22 +25,20 @@ function Home() {
           <div className="grid gap-6 p-6 md:grid-cols-2 md:items-center md:gap-8 md:p-12">
             <div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1 text-xs font-medium text-foreground/70 backdrop-blur">
-                <Sparkles className="h-3 w-3 text-primary" /> Маркетплейс цветов в Бишкеке
+                <Sparkles className="h-3 w-3 text-primary" /> {t("hero.badge")}
               </span>
               <h1 className="mt-3 font-display text-3xl leading-[1.05] text-foreground md:text-5xl">
-                Цветы, которые находят<br />
-                <span className="italic text-primary">новых хозяев</span>
+                {t("hero.title1")}<br />
+                <span className="italic text-primary">{t("hero.title2")}</span>
               </h1>
-              <p className="mt-3 max-w-md text-sm text-foreground/70 md:text-base">
-                Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов.
-              </p>
+              <p className="mt-3 max-w-md text-sm text-foreground/70 md:text-base">{t("hero.desc")}</p>
               <div className="mt-5 flex flex-wrap gap-2">
-                <Link to="/catalog"><Button size="lg" className="rounded-full">Найти букет <ArrowRight className="h-4 w-4" /></Button></Link>
-                <Link to="/sell"><Button size="lg" variant="secondary" className="rounded-full">Продать цветы</Button></Link>
+                <Link to="/catalog"><Button size="lg" className="rounded-full">{t("hero.find")} <ArrowRight className="h-4 w-4" /></Button></Link>
+                <Link to="/sell"><Button size="lg" variant="secondary" className="rounded-full">{t("hero.sellFlowers")}</Button></Link>
               </div>
               <div className="mt-5 flex items-center gap-4 text-xs text-muted-foreground">
-                <div><b className="text-foreground">1200+</b> активных объявлений</div>
-                <div><b className="text-foreground">5</b> проверенных магазинов</div>
+                <div><b className="text-foreground">1200+</b> {t("hero.stat1")}</div>
+                <div><b className="text-foreground">5</b> {t("hero.stat2")}</div>
               </div>
             </div>
             <div className="relative">
@@ -68,15 +66,15 @@ function Home() {
         <div className="grid grid-cols-3 gap-2 md:gap-3">
           <Link to="/catalog" className="group flex items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 md:p-4">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary md:h-11 md:w-11"><ShoppingBag className="h-5 w-5" /></span>
-            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">Купить</div><div className="truncate text-[11px] text-muted-foreground">букеты рядом</div></div>
+            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">{t("quick.buy")}</div><div className="truncate text-[11px] text-muted-foreground">{t("quick.buySub")}</div></div>
           </Link>
           <Link to="/sell" className="group flex items-center gap-2 rounded-2xl bg-primary p-3 text-primary-foreground shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 md:p-4">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-foreground/15 md:h-11 md:w-11"><Plus className="h-5 w-5" /></span>
-            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">Продать</div><div className="truncate text-[11px] opacity-80">за 30 секунд</div></div>
+            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">{t("quick.sell")}</div><div className="truncate text-[11px] opacity-80">{t("quick.sellSub")}</div></div>
           </Link>
           <Link to="/catalog" className="group flex items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 md:p-4">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive md:h-11 md:w-11"><Flame className="h-5 w-5" /></span>
-            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">Срочно</div><div className="truncate text-[11px] text-muted-foreground">скидки до −70%</div></div>
+            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">{t("quick.urgent")}</div><div className="truncate text-[11px] text-muted-foreground">{t("quick.urgentSub")}</div></div>
           </Link>
         </div>
       </section>
@@ -89,7 +87,7 @@ function Home() {
               "rounded-full px-4 py-2 text-sm font-medium transition",
               sellerMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
             )}>
-              {m === "private" ? "От людей" : "От магазинов"}
+              {m === "private" ? t("seller.people") : t("seller.shops")}
             </button>
           ))}
         </div>
@@ -108,14 +106,13 @@ function Home() {
       </section>
 
       {/* Recommended */}
-      <Section title="Рекомендуем для вас" subtitle={sellerMode === "private" ? "Свежие букеты от людей рядом" : "Каталог проверенных магазинов"} link="/catalog">
+      <Section title={t("sec.recommended")} subtitle={sellerMode === "private" ? t("sec.recommendedSubP") : t("sec.recommendedSubS")} link="/catalog" viewAll={t("sec.viewAll")}>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {listings.slice(0, 8).map(l => <ListingCard key={l.id} listing={l} />)}
         </div>
       </Section>
 
-      {/* Nearby */}
-      <Section title="Рядом с вами" subtitle="Букеты в вашем районе Бишкека">
+      <Section title={t("sec.nearby")} subtitle={t("sec.nearbySub")}>
         <div className="mb-3 flex gap-2 overflow-x-auto scrollbar-hide px-4 md:px-0">
           {DISTRICTS.map(d => (
             <span key={d} className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-foreground/70">{d}</span>
@@ -126,15 +123,13 @@ function Home() {
         </div>
       </Section>
 
-      {/* Urgent */}
-      <Section title="Успейте купить сегодня" subtitle="Букеты, которые скоро исчезнут" accent>
+      <Section title={t("sec.urgent")} subtitle={t("sec.urgentSub")} accent>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {urgent.map(l => <ListingCard key={l.id} listing={l} />)}
         </div>
       </Section>
 
-      {/* Shops */}
-      <Section title="Проверенные магазины" subtitle="Флористические студии Бишкека">
+      <Section title={t("sec.shops")} subtitle={t("sec.shopsSub")}>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2 md:grid md:grid-cols-3 md:gap-5 md:px-0">
           {shops.map(s => <ShopCard key={s.id} shop={s} />)}
         </div>
@@ -157,7 +152,7 @@ function Home() {
   );
 }
 
-function Section({ title, subtitle, children, link, accent }: { title: string; subtitle?: string; children: React.ReactNode; link?: string; accent?: boolean }) {
+function Section({ title, subtitle, children, link, accent, viewAll }: { title: string; subtitle?: string; children: React.ReactNode; link?: string; accent?: boolean; viewAll?: string }) {
   return (
     <section className={cn("mx-auto mt-8 max-w-7xl md:px-8", accent && "")}>
       <div className="mb-3 flex items-end justify-between gap-4 px-4 md:px-0">
@@ -165,7 +160,7 @@ function Section({ title, subtitle, children, link, accent }: { title: string; s
           <h2 className="font-display text-xl text-foreground md:text-2xl">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{subtitle}</p>}
         </div>
-        {link && <Link to={link} className="shrink-0 text-xs font-medium text-primary hover:underline md:text-sm">Смотреть все</Link>}
+        {link && <Link to={link} className="shrink-0 text-xs font-medium text-primary hover:underline md:text-sm">{viewAll ?? "→"}</Link>}
       </div>
       <div className="px-4 md:px-0">{children}</div>
     </section>
