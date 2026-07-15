@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LISTINGS, formatSom, getListing } from "@/lib/mock-data";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Check, MapPin, Zap, ChevronDown, ShieldCheck } from "lucide-react";
+import { MapPin, Zap, ChevronDown, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
@@ -16,27 +16,19 @@ export const Route = createFileRoute("/checkout")({
   component: Checkout,
 });
 
-const DELIVERY = [
-  { id: "pickup", label: "Самовывоз", price: 0, time: "по договорённости" },
-  { id: "standard", label: "Стандартная доставка", price: 250, time: "2–3 часа" },
-  { id: "fast", label: "Быстрая доставка", price: 400, time: "1–1.5 часа" },
-  { id: "hour", label: "Доставка за час", price: 550, time: "до 60 мин" },
-];
 const PAY = ["Наличными", "Банковской картой", "MBank", "Optima", "Элсом"];
 
 function Checkout() {
   const { id } = Route.useSearch();
   const listing = getListing(id ?? "") ?? LISTINGS[0];
-  const [delivery, setDelivery] = useState("fast");
   const [pay, setPay] = useState("MBank");
   const [anon, setAnon] = useState(false);
   const [gift, setGift] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
-  const d = DELIVERY.find(x => x.id === delivery)!;
   const commission = Math.round(listing.price * 0.07);
   const sellerGets = listing.price - commission;
-  const total = listing.price + d.price;
+  const total = listing.price;
 
   const submit = () => {
     toast.success("Заказ оформлен! Продавец скоро свяжется с вами.");
@@ -57,8 +49,8 @@ function Checkout() {
               <div className="min-w-0 flex-1 text-sm">
                 <div className="truncate font-medium">{listing.title}</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">Айгерим · +996 555 12 34 56</div>
-                <div className="text-xs text-muted-foreground">ул. Байтик Баатыра 45, кв. 12</div>
-                <div className="mt-1 text-xs"><span className="text-muted-foreground">Доставка:</span> <b>Быстрая · 1–1.5 ч</b> · <span className="text-muted-foreground">Оплата:</span> <b>MBank</b></div>
+              <div className="text-xs text-muted-foreground">Самовывоз · продавец укажет место</div>
+              <div className="mt-1 text-xs"><span className="text-muted-foreground">Оплата:</span> <b>MBank</b></div>
               </div>
             </div>
             <div className="mt-3 flex items-baseline justify-between">
@@ -90,28 +82,16 @@ function Checkout() {
             </div>
           </Section>
 
-          <Section title="Способ доставки">
-            <div className="grid gap-2">
-              {DELIVERY.map(o => (
-                <button key={o.id} onClick={() => setDelivery(o.id)} className={cn("flex items-center gap-3 rounded-2xl border p-3 text-left transition", delivery === o.id ? "border-primary bg-primary/5" : "border-border bg-background")}>
-                  <span className={cn("grid h-5 w-5 place-items-center rounded-full border", delivery === o.id ? "border-primary bg-primary text-primary-foreground" : "border-border")}>{delivery === o.id && <Check className="h-3 w-3" />}</span>
-                  <div className="flex-1"><div className="text-sm font-medium">{o.label}</div><div className="text-[11px] text-muted-foreground">{o.time}</div></div>
-                  <div className="text-sm font-semibold">{o.price === 0 ? "Бесплатно" : formatSom(o.price)}</div>
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 grid h-32 place-items-center rounded-2xl bg-secondary text-sm text-secondary-foreground">🗺️ Карта Бишкека — превью</div>
-          </Section>
-
-          <Section title="Данные получателя">
+          <Section title="Контактные данные">
             <div className="grid gap-3 md:grid-cols-2">
-              <Input placeholder="Адрес доставки" defaultValue="ул. Байтик Баатыра 45, кв. 12" />
-              <Input placeholder="Имя получателя" defaultValue="Айгерим" />
+              <Input placeholder="Ваше имя" defaultValue="Айгерим" />
               <Input placeholder="Телефон" defaultValue="+996 555 12 34 56" />
-              <Input placeholder="Желаемое время" defaultValue="Сегодня, 18:00" />
             </div>
             <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={anon} onChange={e => setAnon(e.target.checked)} className="accent-primary" /> Не показывать имя отправителя</label>
             <Textarea value={gift} onChange={e => setGift(e.target.value)} rows={2} placeholder="Открытка к букету (необязательно)" className="mt-3" />
+            <div className="mt-3 rounded-2xl bg-muted p-3 text-[12px] text-muted-foreground">
+              🤝 Место и время встречи вы согласуете с продавцом в чате после оплаты.
+            </div>
           </Section>
 
           <Section title="Способ оплаты">
@@ -129,7 +109,6 @@ function Checkout() {
             <h3 className="font-display text-lg">Итог</h3>
             <div className="mt-3 space-y-1.5 text-sm">
               <Row label="Букет" v={formatSom(listing.price)} />
-              <Row label={"Доставка · " + d.label} v={d.price === 0 ? "Бесплатно" : formatSom(d.price)} />
             </div>
             <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
               <span className="text-sm">К оплате</span>
