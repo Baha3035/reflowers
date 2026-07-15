@@ -12,8 +12,8 @@ export const Route = createFileRoute("/listing/$id")({
   head: ({ params }) => {
     const l = getListing(params.id);
     return { meta: [
-      { title: l ? `${l.title} — Gül Market` : "Букет — Gül Market" },
-      { name: "description", content: l?.description ?? "Букет на маркетплейсе Gül Market." },
+      { title: l ? `${l.title} — ReFlowers` : "Букет — ReFlowers" },
+      { name: "description", content: l?.description ?? "Букет на маркетплейсе ReFlowers." },
       ...(l ? [{ property: "og:image", content: l.image }] : []),
     ] };
   },

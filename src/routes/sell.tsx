@@ -9,7 +9,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sell")({
-  head: () => ({ meta: [{ title: "Продать букет — Gül Market" }, { name: "description", content: "Опубликуйте объявление о продаже букета за 30 секунд." }] }),
+  head: () => ({ meta: [{ title: "Продать букет — ReFlowers" }, { name: "description", content: "Опубликуйте объявление о продаже букета за 30 секунд." }] }),
   component: Sell,
 });
 

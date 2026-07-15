@@ -10,7 +10,7 @@ import { useState } from "react";
 import { LayoutGrid, List, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/catalog")({
-  head: () => ({ meta: [{ title: "Каталог букетов — Gül Market" }, { name: "description", content: "Все букеты и композиции Бишкека в одном каталоге." }] }),
+  head: () => ({ meta: [{ title: "Каталог букетов — ReFlowers" }, { name: "description", content: "Все букеты и композиции Бишкека в одном каталоге." }] }),
   component: Catalog,
 });
 

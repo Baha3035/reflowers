@@ -10,7 +10,7 @@ export const Route = createFileRoute("/shop/$id")({
     if (!s) throw notFound();
     return { seller: s };
   },
-  head: ({ loaderData }) => ({ meta: [{ title: (loaderData?.seller.name ?? "Продавец") + " — Gül Market" }] }),
+  head: ({ loaderData }) => ({ meta: [{ title: (loaderData?.seller.name ?? "Продавец") + " — ReFlowers" }] }),
   component: Shop,
   notFoundComponent: () => <AppLayout><div className="p-8 text-center">Не найдено</div></AppLayout>,
 });

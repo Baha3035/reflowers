@@ -6,7 +6,7 @@ import { LISTINGS, formatSom } from "@/lib/mock-data";
 import { BadgeCheck, Package, Plus, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/shop-dashboard")({
-  head: () => ({ meta: [{ title: "Панель магазина — Gül Market" }] }),
+  head: () => ({ meta: [{ title: "Панель магазина — ReFlowers" }] }),
   component: ShopDashboard,
 });
 

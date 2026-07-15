@@ -79,10 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Gül Market — маркетплейс цветов в Бишкеке" },
+      { title: "ReFlowers — маркетплейс цветов в Бишкеке" },
       { name: "description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов Бишкека." },
-      { name: "author", content: "Gül Market" },
-      { property: "og:title", content: "Gül Market — маркетплейс цветов в Бишкеке" },
+      { name: "author", content: "ReFlowers" },
+      { property: "og:title", content: "ReFlowers — маркетплейс цветов в Бишкеке" },
       { property: "og:description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

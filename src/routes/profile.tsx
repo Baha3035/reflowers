@@ -5,7 +5,7 @@ import { BadgeCheck, Bell, ChevronRight, Globe, Heart, HelpCircle, LogOut, MapPi
 import { ListingCard } from "@/components/marketplace/ListingCard";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Мой профиль — Gül Market" }] }),
+  head: () => ({ meta: [{ title: "Мой профиль — ReFlowers" }] }),
   component: Profile,
 });
 
