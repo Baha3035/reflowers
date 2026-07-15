@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SellRouteImport } from './routes/sell'
+import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
@@ -17,6 +18,11 @@ import { Route as ListingIdRouteImport } from './routes/listing.$id'
 const SellRoute = SellRouteImport.update({
   id: '/sell',
   path: '/sell',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -38,12 +44,14 @@ const ListingIdRoute = ListingIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
+  '/messages': typeof MessagesRoute
   '/sell': typeof SellRoute
   '/listing/$id': typeof ListingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
+  '/messages': typeof MessagesRoute
   '/sell': typeof SellRoute
   '/listing/$id': typeof ListingIdRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/catalog': typeof CatalogRoute
+  '/messages': typeof MessagesRoute
   '/sell': typeof SellRoute
   '/listing/$id': typeof ListingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/catalog' | '/sell' | '/listing/$id'
+  fullPaths: '/' | '/catalog' | '/messages' | '/sell' | '/listing/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/catalog' | '/sell' | '/listing/$id'
-  id: '__root__' | '/' | '/catalog' | '/sell' | '/listing/$id'
+  to: '/' | '/catalog' | '/messages' | '/sell' | '/listing/$id'
+  id: '__root__' | '/' | '/catalog' | '/messages' | '/sell' | '/listing/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CatalogRoute: typeof CatalogRoute
+  MessagesRoute: typeof MessagesRoute
   SellRoute: typeof SellRoute
   ListingIdRoute: typeof ListingIdRoute
 }
@@ -76,6 +86,13 @@ declare module '@tanstack/react-router' {
       path: '/sell'
       fullPath: '/sell'
       preLoaderRoute: typeof SellRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -105,6 +122,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CatalogRoute: CatalogRoute,
+  MessagesRoute: MessagesRoute,
   SellRoute: SellRoute,
   ListingIdRoute: ListingIdRoute,
 }
