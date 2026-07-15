@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { Heart, MapPin, Truck, Clock, Star, BadgeCheck } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Heart, MapPin, Truck, Clock, Star, BadgeCheck, Zap } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { formatSom, type Listing, getSeller } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ export function ListingCard({ listing, compact = false }: { listing: Listing; co
   const fav = favorites.has(listing.id);
   const seller = getSeller(listing.sellerId);
   const discount = listing.oldPrice ? Math.round((1 - listing.price / listing.oldPrice) * 100) : 0;
+  const navigate = useNavigate();
 
   return (
     <Link to="/listing/$id" params={{ id: listing.id }} className="group block">
@@ -33,6 +34,13 @@ export function ListingCard({ listing, compact = false }: { listing: Listing; co
             className="absolute right-2.5 top-2.5 grid h-9 w-9 place-items-center rounded-full bg-background/90 backdrop-blur transition hover:scale-110"
           >
             <Heart className={cn("h-4 w-4", fav ? "fill-destructive text-destructive" : "text-foreground/70")} />
+          </button>
+          <button
+            onClick={(e) => { e.preventDefault(); navigate({ to: "/checkout", search: { id: listing.id } }); }}
+            aria-label="Купить в 1 клик"
+            className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-md transition hover:scale-105"
+          >
+            <Zap className="h-3 w-3" /> Купить
           </button>
           {listing.hoursLeft && listing.hoursLeft <= 6 && (
             <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
