@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LISTINGS, formatSom, getListing } from "@/lib/mock-data";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Check, MapPin, Zap, ChevronDown } from "lucide-react";
+import { Check, MapPin, Zap, ChevronDown, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
@@ -34,6 +34,8 @@ function Checkout() {
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const d = DELIVERY.find(x => x.id === delivery)!;
+  const commission = Math.round(listing.price * 0.07);
+  const sellerGets = listing.price - commission;
   const total = listing.price + d.price;
 
   const submit = () => {
@@ -62,6 +64,10 @@ function Checkout() {
             <div className="mt-3 flex items-baseline justify-between">
               <span className="text-xs text-muted-foreground">К оплате</span>
               <span className="font-display text-2xl font-semibold text-primary">{formatSom(total)}</span>
+            </div>
+            <div className="mt-2 flex items-start gap-1.5 rounded-2xl bg-background/70 p-2.5 text-[11px] text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+              <span>Оплата защищена. Деньги придут продавцу <b className="text-foreground">после получения букета</b>. Если что-то не так — вернём.</span>
             </div>
             <Button size="lg" className="mt-3 w-full rounded-full" onClick={submit}>
               <Zap className="h-4 w-4" /> Заказать сейчас
@@ -128,6 +134,12 @@ function Checkout() {
             <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
               <span className="text-sm">К оплате</span>
               <span className="font-display text-2xl font-semibold text-primary">{formatSom(total)}</span>
+            </div>
+            <div className="mt-3 rounded-2xl bg-secondary/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
+              <div className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-foreground"><ShieldCheck className="h-3 w-3 text-primary" /> Безопасная сделка</div>
+              <div className="flex justify-between"><span>Комиссия платформы (7%)</span><span>{formatSom(commission)}</span></div>
+              <div className="flex justify-between"><span>Продавец получит</span><span className="text-foreground">{formatSom(sellerGets)}</span></div>
+              <div className="mt-1.5">Деньги придут продавцу после подтверждения получения букета.</div>
             </div>
             <Button size="lg" className="mt-4 w-full rounded-full" onClick={submit}>
               Оформить заказ
