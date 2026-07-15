@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { DISTRICTS } from "@/lib/mock-data";
-import { Camera, ChevronLeft, Sparkles, ChevronDown } from "lucide-react";
+import { Camera, ChevronLeft, Sparkles, ChevronDown, TrendingUp, Palette, Crown, Flame } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -19,10 +19,24 @@ function Sell() {
   const [price, setPrice] = useState("1900");
   const [district, setDistrict] = useState("Центр");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [boosts, setBoosts] = useState<Record<string, boolean>>({});
   const analyzed = photos.length > 0;
 
+  const BOOSTS = [
+    { id: "up", label: "Поднять объявление", price: 50, icon: TrendingUp, desc: "+3× просмотров" },
+    { id: "color", label: "Выделить цветом", price: 80, icon: Palette, desc: "Заметнее в ленте" },
+    { id: "top", label: "В топ на сутки", price: 150, icon: Crown, desc: "Первые позиции" },
+    { id: "urgent", label: "«Успейте купить сегодня»", price: 100, icon: Flame, desc: "Отдельный раздел" },
+  ];
+  const boostTotal = BOOSTS.filter(b => boosts[b.id]).reduce((s, b) => s + b.price, 0);
+  const numPrice = Number(price) || 0;
+  const commission = Math.round(numPrice * 0.07);
+  const sellerGets = Math.max(0, numPrice - commission);
+
   const publish = () => {
-    toast.success("Объявление опубликовано! Активно 24 часа.");
+    toast.success(boostTotal > 0
+      ? `Опубликовано с продвижением (+${boostTotal} сом). Активно 24 часа.`
+      : "Объявление опубликовано! Активно 24 часа.");
     setTimeout(() => navigate({ to: "/profile" }), 600);
   };
 
@@ -104,6 +118,38 @@ function Sell() {
               </div>
             </div>
           )}
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-semibold">Продвижение <span className="text-[11px] font-normal text-muted-foreground">· необязательно</span></span>
+              {boostTotal > 0 && <span className="text-xs font-semibold text-primary">+{boostTotal} сом</span>}
+            </div>
+            <div className="grid gap-2">
+              {BOOSTS.map(b => {
+                const on = !!boosts[b.id];
+                const Icon = b.icon;
+                return (
+                  <button key={b.id} onClick={() => setBoosts(s => ({ ...s, [b.id]: !s[b.id] }))} className={cn("flex items-center gap-3 rounded-2xl border p-2.5 text-left transition", on ? "border-primary bg-primary/5" : "border-border bg-background")}>
+                    <span className={cn("grid h-9 w-9 place-items-center rounded-xl", on ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/70")}><Icon className="h-4 w-4" /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium">{b.label}</div>
+                      <div className="text-[11px] text-muted-foreground">{b.desc}</div>
+                    </div>
+                    <div className="text-sm font-semibold">{b.price} сом</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-background p-3 text-[12px]">
+            <div className="mb-1 text-xs font-semibold text-foreground">Сколько вы получите</div>
+            <div className="flex justify-between text-muted-foreground"><span>Цена букета</span><span className="text-foreground">{numPrice} сом</span></div>
+            <div className="flex justify-between text-muted-foreground"><span>Комиссия платформы (7%)</span><span>−{commission} сом</span></div>
+            {boostTotal > 0 && <div className="flex justify-between text-muted-foreground"><span>Продвижение</span><span>−{boostTotal} сом</span></div>}
+            <div className="mt-1.5 flex justify-between border-t border-border pt-1.5 font-semibold text-foreground"><span>На карту после продажи</span><span className="text-primary">{Math.max(0, sellerGets - boostTotal)} сом</span></div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Деньги придут после подтверждения получения букета покупателем.</div>
+          </div>
 
           <div className="rounded-2xl bg-accent p-2.5 text-[11px] text-accent-foreground">
             Объявление активно 24 часа. По умолчанию: самовывоз + курьер, торг возможен, номер скрыт.
