@@ -1,10 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppLayout } from "@/components/marketplace/AppLayout";
-import { CONVERSATIONS, getListing, getSeller, formatSom } from "@/lib/mock-data";
+import { CONVERSATIONS, DISTRICTS, getListing, getSeller, formatSom } from "@/lib/mock-data";
 import { BadgeCheck, MapPin, Send, MoreHorizontal, DollarSign, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useApp } from "@/lib/store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/messages")({
   head: () => ({ meta: [{ title: "Сообщения — ReFlowers" }] }),
@@ -13,19 +17,45 @@ export const Route = createFileRoute("/messages")({
 
 const QUICK = ["Букет ещё доступен?", "Можно оформить доставку?", "Сможете немного снизить цену?", "Когда можно забрать?", "Цветы точно свежие?"];
 
+type ChatMsg = { me: boolean; text: string; kind?: "text" | "offer" | "location" };
+
 function Messages() {
+  const { t } = useApp();
   const [active, setActive] = useState(CONVERSATIONS[0].id);
   const conv = CONVERSATIONS.find(c => c.id === active)!;
   const seller = getSeller(conv.sellerId)!;
   const listing = getListing(conv.listingId)!;
 
-  const [msgs, setMsgs] = useState([
+  const [msgs, setMsgs] = useState<ChatMsg[]>([
     { me: false, text: "Здравствуйте! Букет ещё доступен?" },
     { me: true, text: "Да, ещё доступен. Могу привезти вечером." },
     { me: false, text: "Отлично! А сможете снизить до 3000?" },
     { me: true, text: "Могу до 3200, цветы очень свежие 🌹" },
   ]);
   const [text, setText] = useState("");
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offer, setOffer] = useState(String(Math.max(500, listing.price - 300)));
+  const [locOpen, setLocOpen] = useState(false);
+  const [locChoice, setLocChoice] = useState(listing.district);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Мошенничество");
+
+  const sendOffer = () => {
+    const n = Number(offer);
+    if (!n) return;
+    setMsgs(m => [...m, { me: true, text: `💰 Моё предложение: ${formatSom(n)}`, kind: "offer" }]);
+    setOfferOpen(false);
+    toast.success(t("msg.offerSent"));
+  };
+  const sendLocation = () => {
+    setMsgs(m => [...m, { me: true, text: `📍 ${locChoice} — встретимся здесь`, kind: "location" }]);
+    setLocOpen(false);
+    toast.success(t("msg.locationSent"));
+  };
+  const sendReport = () => {
+    setReportOpen(false);
+    toast.success(t("msg.reportSent"));
+  };
 
   return (
     <AppLayout>
@@ -78,7 +108,17 @@ function Messages() {
           <div className="flex-1 space-y-2 overflow-y-auto p-4">
             {msgs.map((m, i) => (
               <div key={i} className={cn("flex", m.me && "justify-end")}>
-                <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm", m.me ? "bg-primary text-primary-foreground" : "bg-muted")}>{m.text}</div>
+                <div className={cn(
+                  "max-w-[75%] rounded-2xl px-3 py-2 text-sm",
+                  m.me ? "bg-primary text-primary-foreground" : "bg-muted",
+                  m.kind === "offer" && "ring-2 ring-gold/40",
+                  m.kind === "location" && "ring-2 ring-primary/40",
+                )}>
+                  {m.text}
+                  {m.kind === "location" && (
+                    <div className="mt-1.5 grid h-20 place-items-center rounded-xl bg-background/30 text-[10px]">🗺️ карта</div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -88,17 +128,83 @@ function Messages() {
               {QUICK.map(q => <button key={q} onClick={() => setMsgs(m => [...m, { me: true, text: q }])} className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80">{q}</button>)}
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" className="rounded-full"><DollarSign className="h-4 w-4" /> Предложить цену</Button>
-              <Button variant="ghost" size="sm" className="rounded-full"><MapPin className="h-4 w-4" /> Локация</Button>
-              <Button variant="ghost" size="sm" className="rounded-full text-destructive"><AlertCircle className="h-4 w-4" /> Жалоба</Button>
+              <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setOfferOpen(true)}><DollarSign className="h-4 w-4" /> {t("msg.offer")}</Button>
+              <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setLocOpen(true)}><MapPin className="h-4 w-4" /> {t("msg.location")}</Button>
+              <Button variant="ghost" size="sm" className="rounded-full text-destructive" onClick={() => setReportOpen(true)}><AlertCircle className="h-4 w-4" /> {t("msg.report")}</Button>
             </div>
             <div className="mt-2 flex items-center gap-2 rounded-2xl bg-muted p-2 pl-4">
-              <input value={text} onChange={e => setText(e.target.value)} placeholder="Сообщение..." className="w-full bg-transparent text-sm outline-none" onKeyDown={e => { if (e.key === "Enter" && text) { setMsgs(m => [...m, { me: true, text }]); setText(""); } }} />
+              <input value={text} onChange={e => setText(e.target.value)} placeholder={t("msg.placeholder")} className="w-full bg-transparent text-sm outline-none" onKeyDown={e => { if (e.key === "Enter" && text) { setMsgs(m => [...m, { me: true, text }]); setText(""); } }} />
               <button onClick={() => { if (text) { setMsgs(m => [...m, { me: true, text }]); setText(""); } }} className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground"><Send className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Offer dialog */}
+      <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("msg.offerTitle")}</DialogTitle>
+            <DialogDescription>{t("msg.offerDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="text-xs text-muted-foreground">Текущая цена: <b className="text-foreground">{formatSom(listing.price)}</b></div>
+          <div className="flex items-center gap-2">
+            <Input type="number" value={offer} onChange={e => setOffer(e.target.value)} className="text-lg font-semibold" />
+            <span className="text-sm text-muted-foreground">сом</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {[0.9, 0.8, 0.7].map(k => (
+              <button key={k} onClick={() => setOffer(String(Math.round(listing.price * k)))} className="rounded-full bg-muted px-3 py-1 text-xs">−{Math.round((1 - k) * 100)}%</button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOfferOpen(false)}>{t("msg.cancel")}</Button>
+            <Button onClick={sendOffer}>{t("msg.send")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Location dialog */}
+      <Dialog open={locOpen} onOpenChange={setLocOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("msg.locationTitle")}</DialogTitle>
+            <DialogDescription>{t("msg.locationDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="grid h-32 place-items-center rounded-2xl bg-secondary text-sm text-secondary-foreground">🗺️ Карта — превью</div>
+          <div className="flex flex-wrap gap-1.5">
+            {DISTRICTS.map(d => (
+              <button key={d} onClick={() => setLocChoice(d)} className={cn("rounded-full border px-3 py-1.5 text-xs font-medium", locChoice === d ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground/80")}>{d}</button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLocOpen(false)}>{t("msg.cancel")}</Button>
+            <Button onClick={sendLocation}>{t("msg.send")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("msg.reportTitle")}</DialogTitle>
+            <DialogDescription>{t("msg.reportDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-1.5">
+            {["Мошенничество", "Спам", "Оскорбления", "Букет несоответствует описанию", "Другое"].map(r => (
+              <label key={r} className="flex cursor-pointer items-center gap-2 rounded-2xl border border-border p-2.5 text-sm">
+                <input type="radio" name="report" checked={reportReason === r} onChange={() => setReportReason(r)} className="accent-primary" />
+                <span>{r}</span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportOpen(false)}>{t("msg.cancel")}</Button>
+            <Button variant="destructive" onClick={sendReport}>{t("msg.send")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
