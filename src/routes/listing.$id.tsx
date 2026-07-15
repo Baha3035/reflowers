@@ -58,7 +58,7 @@ function ListingPage() {
             </div>
             {gallery.length > 1 && (
               <div className="mt-2 flex gap-2">
-                {gallery.map((g, i) => (
+                {gallery.map((g: string, i: number) => (
                   <button key={i} onClick={() => setIdx(i)} className={cn("aspect-square w-20 overflow-hidden rounded-2xl", idx === i && "ring-2 ring-primary")}>
                     <img src={g} alt="" className="h-full w-full object-cover" />
                   </button>
