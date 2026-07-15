@@ -1,24 +1,155 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AppLayout, SearchBar } from "@/components/marketplace/AppLayout";
+import { ListingCard } from "@/components/marketplace/ListingCard";
+import { ShopCard } from "@/components/marketplace/ShopCard";
+import { Button } from "@/components/ui/button";
+import { CATEGORIES, DISTRICTS, LISTINGS, SELLERS, IMAGES } from "@/lib/mock-data";
+import { useApp } from "@/lib/store";
+import { ArrowRight, Leaf, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
-export const Route = createFileRoute("/")({
-  component: Index,
-});
+export const Route = createFileRoute("/")({ component: Home });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Home() {
+  const { sellerMode, setSellerMode } = useApp();
+  const listings = LISTINGS.filter(l => l.sellerType === sellerMode);
+  const nearby = LISTINGS.slice(0, 8);
+  const urgent = LISTINGS.filter(l => l.urgent).slice(0, 4);
+  const shops = SELLERS.filter(s => s.type === "shop");
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <AppLayout>
+      {/* Hero */}
+      <section className="relative mx-auto max-w-7xl px-4 pt-4 md:px-8 md:pt-8">
+        <div className="relative overflow-hidden rounded-[28px] md:rounded-[36px]" style={{ background: "var(--gradient-hero)" }}>
+          <div className="grid gap-6 p-6 md:grid-cols-2 md:items-center md:gap-8 md:p-12">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1 text-xs font-medium text-foreground/70 backdrop-blur">
+                <Sparkles className="h-3 w-3 text-primary" /> Маркетплейс цветов в Бишкеке
+              </span>
+              <h1 className="mt-3 font-display text-3xl leading-[1.05] text-foreground md:text-5xl">
+                Цветы, которые находят<br />
+                <span className="italic text-primary">новых хозяев</span>
+              </h1>
+              <p className="mt-3 max-w-md text-sm text-foreground/70 md:text-base">
+                Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link to="/catalog"><Button size="lg" className="rounded-full">Найти букет <ArrowRight className="h-4 w-4" /></Button></Link>
+                <Link to="/sell"><Button size="lg" variant="secondary" className="rounded-full">Продать цветы</Button></Link>
+              </div>
+              <div className="mt-5 flex items-center gap-4 text-xs text-muted-foreground">
+                <div><b className="text-foreground">1200+</b> активных объявлений</div>
+                <div><b className="text-foreground">5</b> проверенных магазинов</div>
+              </div>
+            </div>
+            <div className="relative">
+              <img src={IMAGES.heroPeonies} alt="Букет пионов" width={1600} height={1200} className="aspect-[4/3] w-full rounded-3xl object-cover shadow-[var(--shadow-soft)]" />
+              <div className="absolute -bottom-3 -left-3 rounded-2xl bg-card px-3 py-2 text-xs shadow-[var(--shadow-soft)] md:-bottom-4 md:-left-4">
+                <div className="text-[10px] text-muted-foreground">Сегодня в 11:00</div>
+                <div className="font-medium">Пионы · 1 800 сом</div>
+              </div>
+              <div className="absolute -top-3 -right-3 rounded-2xl bg-card px-3 py-2 text-xs shadow-[var(--shadow-soft)] md:-top-4 md:-right-4">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">✓ Проверенный продавец</div>
+                <div className="font-medium text-primary">−55% от магазина</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Search */}
+      <section className="mx-auto mt-5 max-w-7xl px-4 md:px-8">
+        <SearchBar />
+      </section>
+
+      {/* Seller switch */}
+      <section className="mx-auto mt-4 max-w-7xl px-4 md:px-8">
+        <div className="inline-flex rounded-full bg-muted p-1">
+          {(["private", "shop"] as const).map(m => (
+            <button key={m} onClick={() => setSellerMode(m)} className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition",
+              sellerMode === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+            )}>
+              {m === "private" ? "От людей" : "От магазинов"}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="mx-auto mt-5 max-w-7xl md:px-8">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-2 md:px-0">
+          {CATEGORIES.map(c => (
+            <Link key={c.id} to="/catalog" className="flex shrink-0 items-center gap-2 rounded-full bg-card px-4 py-2.5 text-sm shadow-[var(--shadow-card)] transition hover:-translate-y-0.5">
+              <span className="text-base">{c.icon}</span>
+              <span className="whitespace-nowrap font-medium text-foreground/80">{c.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Recommended */}
+      <Section title="Рекомендуем для вас" subtitle={sellerMode === "private" ? "Свежие букеты от людей рядом" : "Каталог проверенных магазинов"} link="/catalog">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+          {listings.slice(0, 8).map(l => <ListingCard key={l.id} listing={l} />)}
+        </div>
+      </Section>
+
+      {/* Nearby */}
+      <Section title="Рядом с вами" subtitle="Букеты в вашем районе Бишкека">
+        <div className="mb-3 flex gap-2 overflow-x-auto scrollbar-hide px-4 md:px-0">
+          {DISTRICTS.map(d => (
+            <span key={d} className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-foreground/70">{d}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+          {nearby.slice(0, 4).map(l => <ListingCard key={l.id} listing={l} />)}
+        </div>
+      </Section>
+
+      {/* Urgent */}
+      <Section title="Успейте купить сегодня" subtitle="Букеты, которые скоро исчезнут" accent>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+          {urgent.map(l => <ListingCard key={l.id} listing={l} />)}
+        </div>
+      </Section>
+
+      {/* Shops */}
+      <Section title="Проверенные магазины" subtitle="Флористические студии Бишкека">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2 md:grid md:grid-cols-3 md:gap-5 md:px-0">
+          {shops.map(s => <ShopCard key={s.id} shop={s} />)}
+        </div>
+      </Section>
+
+      {/* Sustainability */}
+      <section className="mx-auto mt-10 mb-12 max-w-7xl px-4 md:px-8">
+        <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[oklch(0.9_0.05_145)] to-[oklch(0.94_0.03_60)] p-8 md:p-12">
+          <div className="max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1 text-xs font-medium text-foreground/70"><Leaf className="h-3 w-3" /> Экологично</span>
+            <h2 className="mt-3 font-display text-2xl leading-tight text-foreground md:text-4xl">Подарите цветам вторую жизнь</h2>
+            <p className="mt-2 max-w-lg text-sm text-foreground/70 md:text-base">
+              Каждый перепроданный букет — это меньше отходов и больше красивых моментов. Красивые цветы не должны попадать в мусор.
+            </p>
+          </div>
+          <div className="pointer-events-none absolute -right-8 -bottom-8 text-[10rem] leading-none opacity-20 md:text-[16rem]">🌿</div>
+        </div>
+      </section>
+    </AppLayout>
+  );
+}
+
+function Section({ title, subtitle, children, link, accent }: { title: string; subtitle?: string; children: React.ReactNode; link?: string; accent?: boolean }) {
+  return (
+    <section className={cn("mx-auto mt-8 max-w-7xl md:px-8", accent && "")}>
+      <div className="mb-3 flex items-end justify-between gap-4 px-4 md:px-0">
+        <div>
+          <h2 className="font-display text-xl text-foreground md:text-2xl">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">{subtitle}</p>}
+        </div>
+        {link && <Link to={link} className="shrink-0 text-xs font-medium text-primary hover:underline md:text-sm">Смотреть все</Link>}
+      </div>
+      <div className="px-4 md:px-0">{children}</div>
+    </section>
   );
 }

@@ -9,38 +9,228 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShopDashboardRouteImport } from './routes/shop-dashboard'
+import { Route as SellRouteImport } from './routes/sell'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopIdRouteImport } from './routes/shop.$id'
+import { Route as ListingIdRouteImport } from './routes/listing.$id'
 
+const ShopDashboardRoute = ShopDashboardRouteImport.update({
+  id: '/shop-dashboard',
+  path: '/shop-dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SellRoute = SellRouteImport.update({
+  id: '/sell',
+  path: '/sell',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogRoute = CatalogRouteImport.update({
+  id: '/catalog',
+  path: '/catalog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopIdRoute = ShopIdRouteImport.update({
+  id: '/shop/$id',
+  path: '/shop/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ListingIdRoute = ListingIdRouteImport.update({
+  id: '/listing/$id',
+  path: '/listing/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/catalog': typeof CatalogRoute
+  '/checkout': typeof CheckoutRoute
+  '/favorites': typeof FavoritesRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/profile': typeof ProfileRoute
+  '/sell': typeof SellRoute
+  '/shop-dashboard': typeof ShopDashboardRoute
+  '/listing/$id': typeof ListingIdRoute
+  '/shop/$id': typeof ShopIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/catalog': typeof CatalogRoute
+  '/checkout': typeof CheckoutRoute
+  '/favorites': typeof FavoritesRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/profile': typeof ProfileRoute
+  '/sell': typeof SellRoute
+  '/shop-dashboard': typeof ShopDashboardRoute
+  '/listing/$id': typeof ListingIdRoute
+  '/shop/$id': typeof ShopIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/catalog': typeof CatalogRoute
+  '/checkout': typeof CheckoutRoute
+  '/favorites': typeof FavoritesRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/profile': typeof ProfileRoute
+  '/sell': typeof SellRoute
+  '/shop-dashboard': typeof ShopDashboardRoute
+  '/listing/$id': typeof ListingIdRoute
+  '/shop/$id': typeof ShopIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/catalog'
+    | '/checkout'
+    | '/favorites'
+    | '/messages'
+    | '/notifications'
+    | '/profile'
+    | '/sell'
+    | '/shop-dashboard'
+    | '/listing/$id'
+    | '/shop/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/catalog'
+    | '/checkout'
+    | '/favorites'
+    | '/messages'
+    | '/notifications'
+    | '/profile'
+    | '/sell'
+    | '/shop-dashboard'
+    | '/listing/$id'
+    | '/shop/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/catalog'
+    | '/checkout'
+    | '/favorites'
+    | '/messages'
+    | '/notifications'
+    | '/profile'
+    | '/sell'
+    | '/shop-dashboard'
+    | '/listing/$id'
+    | '/shop/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CatalogRoute: typeof CatalogRoute
+  CheckoutRoute: typeof CheckoutRoute
+  FavoritesRoute: typeof FavoritesRoute
+  MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ProfileRoute: typeof ProfileRoute
+  SellRoute: typeof SellRoute
+  ShopDashboardRoute: typeof ShopDashboardRoute
+  ListingIdRoute: typeof ListingIdRoute
+  ShopIdRoute: typeof ShopIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shop-dashboard': {
+      id: '/shop-dashboard'
+      path: '/shop-dashboard'
+      fullPath: '/shop-dashboard'
+      preLoaderRoute: typeof ShopDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sell': {
+      id: '/sell'
+      path: '/sell'
+      fullPath: '/sell'
+      preLoaderRoute: typeof SellRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalog': {
+      id: '/catalog'
+      path: '/catalog'
+      fullPath: '/catalog'
+      preLoaderRoute: typeof CatalogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +238,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/$id': {
+      id: '/shop/$id'
+      path: '/shop/$id'
+      fullPath: '/shop/$id'
+      preLoaderRoute: typeof ShopIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/listing/$id': {
+      id: '/listing/$id'
+      path: '/listing/$id'
+      fullPath: '/listing/$id'
+      preLoaderRoute: typeof ListingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CatalogRoute: CatalogRoute,
+  CheckoutRoute: CheckoutRoute,
+  FavoritesRoute: FavoritesRoute,
+  MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
+  ProfileRoute: ProfileRoute,
+  SellRoute: SellRoute,
+  ShopDashboardRoute: ShopDashboardRoute,
+  ListingIdRoute: ListingIdRoute,
+  ShopIdRoute: ShopIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
