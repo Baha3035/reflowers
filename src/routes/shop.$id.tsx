@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
-import { LISTINGS, REVIEWS, SELLERS, getSeller, formatSom } from "@/lib/mock-data";
+import { LISTINGS, REVIEWS, getSeller, formatSom } from "@/lib/mock-data";
 import { BadgeCheck, Clock, Instagram, MapPin, Phone, Star } from "lucide-react";
 
 export const Route = createFileRoute("/shop/$id")({
