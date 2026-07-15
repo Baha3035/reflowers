@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SellRouteImport } from './routes/sell'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as CatalogRouteImport } from './routes/catalog'
@@ -25,6 +26,11 @@ const SellRoute = SellRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesRoute = MessagesRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/catalog': typeof CatalogRoute
   '/favorites': typeof FavoritesRoute
   '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
   '/listing/$id': typeof ListingIdRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/catalog': typeof CatalogRoute
   '/favorites': typeof FavoritesRoute
   '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
   '/listing/$id': typeof ListingIdRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/catalog': typeof CatalogRoute
   '/favorites': typeof FavoritesRoute
   '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
   '/listing/$id': typeof ListingIdRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/favorites'
     | '/messages'
+    | '/notifications'
     | '/profile'
     | '/sell'
     | '/listing/$id'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/favorites'
     | '/messages'
+    | '/notifications'
     | '/profile'
     | '/sell'
     | '/listing/$id'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/catalog'
     | '/favorites'
     | '/messages'
+    | '/notifications'
     | '/profile'
     | '/sell'
     | '/listing/$id'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   CatalogRoute: typeof CatalogRoute
   FavoritesRoute: typeof FavoritesRoute
   MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
   ProfileRoute: typeof ProfileRoute
   SellRoute: typeof SellRoute
   ListingIdRoute: typeof ListingIdRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messages': {
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   CatalogRoute: CatalogRoute,
   FavoritesRoute: FavoritesRoute,
   MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
   ProfileRoute: ProfileRoute,
   SellRoute: SellRoute,
   ListingIdRoute: ListingIdRoute,
