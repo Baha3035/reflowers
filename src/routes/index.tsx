@@ -5,7 +5,7 @@ import { ShopCard } from "@/components/marketplace/ShopCard";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, DISTRICTS, LISTINGS, SELLERS, IMAGES } from "@/lib/mock-data";
 import { useApp } from "@/lib/store";
-import { ArrowRight, Leaf, Sparkles } from "lucide-react";
+import { ArrowRight, Leaf, Sparkles, ShoppingBag, Plus, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -61,6 +61,24 @@ function Home() {
       {/* Search */}
       <section className="mx-auto mt-5 max-w-7xl px-4 md:px-8">
         <SearchBar />
+      </section>
+
+      {/* Quick actions — 1 tap to main flows */}
+      <section className="mx-auto mt-4 max-w-7xl px-4 md:px-8">
+        <div className="grid grid-cols-3 gap-2 md:gap-3">
+          <Link to="/catalog" className="group flex items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 md:p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary md:h-11 md:w-11"><ShoppingBag className="h-5 w-5" /></span>
+            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">Купить</div><div className="truncate text-[11px] text-muted-foreground">букеты рядом</div></div>
+          </Link>
+          <Link to="/sell" className="group flex items-center gap-2 rounded-2xl bg-primary p-3 text-primary-foreground shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 md:p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-foreground/15 md:h-11 md:w-11"><Plus className="h-5 w-5" /></span>
+            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">Продать</div><div className="truncate text-[11px] opacity-80">за 30 секунд</div></div>
+          </Link>
+          <Link to="/catalog" className="group flex items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 md:p-4">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive md:h-11 md:w-11"><Flame className="h-5 w-5" /></span>
+            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">Срочно</div><div className="truncate text-[11px] text-muted-foreground">скидки до −70%</div></div>
+          </Link>
+        </div>
       </section>
 
       {/* Seller switch */}
