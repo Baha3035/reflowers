@@ -9,6 +9,7 @@ import { Send, User, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeBouquet } from "@/lib/analyze-bouquet.functions";
+import { DealCard } from "@/components/marketplace/DealCard";
 
 export const Route = createFileRoute("/conversation/$id")({
   head: () => ({ meta: [{ title: "Диалог — ReFlowers" }] }),
@@ -237,6 +238,7 @@ function ConversationPage() {
 
         {/* Messages */}
         <div className="mt-3 flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-3">
+          <DealCard conversationId={id} />
           {messages.isLoading ? (
             <div className="text-center text-sm text-muted-foreground">Загрузка сообщений…</div>
           ) : (messages.data ?? []).length === 0 ? (

@@ -49,6 +49,41 @@ export type Database = {
           },
         ]
       }
+      deal_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          event_type: Database["public"]["Enums"]["deal_event_type"]
+          id: string
+          order_id: string
+          payload: Json
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          event_type: Database["public"]["Enums"]["deal_event_type"]
+          id?: string
+          order_id: string
+          payload?: Json
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["deal_event_type"]
+          id?: string
+          order_id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -278,46 +313,86 @@ export type Database = {
         Row: {
           buyer_id: string
           buyer_note: string | null
+          cancel_reason: string | null
           commission: number
           completed_at: string | null
+          conversation_id: string | null
           created_at: string
+          deal_status: Database["public"]["Enums"]["deal_status"]
+          delivery_cost: number | null
+          dispute_reason: string | null
+          final_price: number | null
           id: string
           listing_id: string
           paid_at: string | null
+          payment_details: string | null
+          payment_method: string | null
+          prepayment_amount: number | null
+          prepayment_deadline: string | null
           price: number
           seller_amount: number
           seller_id: string
           status: Database["public"]["Enums"]["order_status"]
+          updated_at: string
         }
         Insert: {
           buyer_id: string
           buyer_note?: string | null
+          cancel_reason?: string | null
           commission?: number
           completed_at?: string | null
+          conversation_id?: string | null
           created_at?: string
+          deal_status?: Database["public"]["Enums"]["deal_status"]
+          delivery_cost?: number | null
+          dispute_reason?: string | null
+          final_price?: number | null
           id?: string
           listing_id: string
           paid_at?: string | null
+          payment_details?: string | null
+          payment_method?: string | null
+          prepayment_amount?: number | null
+          prepayment_deadline?: string | null
           price: number
           seller_amount?: number
           seller_id: string
           status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
         }
         Update: {
           buyer_id?: string
           buyer_note?: string | null
+          cancel_reason?: string | null
           commission?: number
           completed_at?: string | null
+          conversation_id?: string | null
           created_at?: string
+          deal_status?: Database["public"]["Enums"]["deal_status"]
+          delivery_cost?: number | null
+          dispute_reason?: string | null
+          final_price?: number | null
           id?: string
           listing_id?: string
           paid_at?: string | null
+          payment_details?: string | null
+          payment_method?: string | null
+          prepayment_amount?: number | null
+          prepayment_deadline?: string | null
           price?: number
           seller_amount?: number
           seller_id?: string
           status?: Database["public"]["Enums"]["order_status"]
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_listing_id_fkey"
             columns: ["listing_id"]
@@ -552,6 +627,29 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       boost_kind: "bump" | "highlight" | "top" | "urgent"
+      deal_event_type:
+        | "buyer_requested"
+        | "seller_confirmed"
+        | "seller_declined"
+        | "seller_set_terms"
+        | "buyer_sent_prepayment"
+        | "seller_confirmed_prepayment"
+        | "seller_rejected_prepayment"
+        | "bouquet_ready_pickup"
+        | "bouquet_shipped"
+        | "buyer_received"
+        | "buyer_sent_full"
+        | "seller_confirmed_full"
+        | "cancelled"
+        | "problem_reported"
+      deal_status:
+        | "awaiting_confirmation"
+        | "awaiting_payment"
+        | "in_progress"
+        | "awaiting_completion"
+        | "completed"
+        | "cancelled"
+        | "disputed"
       listing_condition: "new" | "fresh" | "day_old"
       listing_status: "active" | "sold" | "hidden" | "expired"
       message_kind: "text" | "offer" | "location" | "system" | "image"
@@ -688,6 +786,31 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       boost_kind: ["bump", "highlight", "top", "urgent"],
+      deal_event_type: [
+        "buyer_requested",
+        "seller_confirmed",
+        "seller_declined",
+        "seller_set_terms",
+        "buyer_sent_prepayment",
+        "seller_confirmed_prepayment",
+        "seller_rejected_prepayment",
+        "bouquet_ready_pickup",
+        "bouquet_shipped",
+        "buyer_received",
+        "buyer_sent_full",
+        "seller_confirmed_full",
+        "cancelled",
+        "problem_reported",
+      ],
+      deal_status: [
+        "awaiting_confirmation",
+        "awaiting_payment",
+        "in_progress",
+        "awaiting_completion",
+        "completed",
+        "cancelled",
+        "disputed",
+      ],
       listing_condition: ["new", "fresh", "day_old"],
       listing_status: ["active", "sold", "hidden", "expired"],
       message_kind: ["text", "offer", "location", "system", "image"],
