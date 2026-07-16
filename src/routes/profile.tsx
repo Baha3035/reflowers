@@ -165,7 +165,7 @@ function Profile() {
 
         <h2 className="mt-8 font-display text-lg">Настройки</h2>
         <div className="mt-3 divide-y divide-border rounded-3xl bg-card shadow-[var(--shadow-card)]">
-          <Row icon={ShoppingBag} label="Мои заказы" />
+          <Row icon={ShoppingBag} label="Мои заказы" onClick={() => toast.info("История заказов скоро появится")} />
           <Row icon={Package} label={`Проданные букеты · ${sold}`} onClick={() => setShowSold(v => !v)} />
           {showSold && (
             <div className="px-4 py-3">
