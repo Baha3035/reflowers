@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, User } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/conversation/$id")({
