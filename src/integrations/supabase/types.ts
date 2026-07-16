@@ -14,16 +14,493 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          listing_id: string
+          seller_id: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          listing_id: string
+          seller_id: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          listing_id?: string
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          listing_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          listing_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          listing_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_boosts: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          kind: Database["public"]["Enums"]["boost_kind"]
+          listing_id: string
+          price: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          kind: Database["public"]["Enums"]["boost_kind"]
+          listing_id: string
+          price: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["boost_kind"]
+          listing_id?: string
+          price?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_boosts_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          boost_bump_until: string | null
+          boost_highlight_until: string | null
+          boost_top_until: string | null
+          category: string
+          city: string
+          condition: Database["public"]["Enums"]["listing_condition"]
+          created_at: string
+          description: string | null
+          district: string | null
+          favorites_count: number
+          id: string
+          images: string[]
+          original_price: number | null
+          price: number
+          seller_id: string
+          status: Database["public"]["Enums"]["listing_status"]
+          title: string
+          updated_at: string
+          urgent: boolean
+          views: number
+        }
+        Insert: {
+          boost_bump_until?: string | null
+          boost_highlight_until?: string | null
+          boost_top_until?: string | null
+          category: string
+          city?: string
+          condition?: Database["public"]["Enums"]["listing_condition"]
+          created_at?: string
+          description?: string | null
+          district?: string | null
+          favorites_count?: number
+          id?: string
+          images?: string[]
+          original_price?: number | null
+          price: number
+          seller_id: string
+          status?: Database["public"]["Enums"]["listing_status"]
+          title: string
+          updated_at?: string
+          urgent?: boolean
+          views?: number
+        }
+        Update: {
+          boost_bump_until?: string | null
+          boost_highlight_until?: string | null
+          boost_top_until?: string | null
+          category?: string
+          city?: string
+          condition?: Database["public"]["Enums"]["listing_condition"]
+          created_at?: string
+          description?: string | null
+          district?: string | null
+          favorites_count?: number
+          id?: string
+          images?: string[]
+          original_price?: number | null
+          price?: number
+          seller_id?: string
+          status?: Database["public"]["Enums"]["listing_status"]
+          title?: string
+          updated_at?: string
+          urgent?: boolean
+          views?: number
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          body: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["message_kind"]
+          meta: Json
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["message_kind"]
+          meta?: Json
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["message_kind"]
+          meta?: Json
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          amount: number
+          buyer_id: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          listing_id: string
+          responded_at: string | null
+          seller_id: string
+          status: Database["public"]["Enums"]["offer_status"]
+        }
+        Insert: {
+          amount: number
+          buyer_id: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          responded_at?: string | null
+          seller_id: string
+          status?: Database["public"]["Enums"]["offer_status"]
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          responded_at?: string | null
+          seller_id?: string
+          status?: Database["public"]["Enums"]["offer_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          buyer_id: string
+          buyer_note: string | null
+          commission: number
+          completed_at: string | null
+          created_at: string
+          id: string
+          listing_id: string
+          paid_at: string | null
+          price: number
+          seller_amount: number
+          seller_id: string
+          status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          buyer_id: string
+          buyer_note?: string | null
+          commission?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id: string
+          paid_at?: string | null
+          price: number
+          seller_amount?: number
+          seller_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          buyer_id?: string
+          buyer_note?: string | null
+          commission?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          listing_id?: string
+          paid_at?: string | null
+          price?: number
+          seller_amount?: number
+          seller_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string
+          display_name: string | null
+          district: string | null
+          id: string
+          phone: string | null
+          rating: number
+          reviews_count: number
+          seller_type: Database["public"]["Enums"]["seller_type"]
+          shop_name: string | null
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
+          district?: string | null
+          id: string
+          phone?: string | null
+          rating?: number
+          reviews_count?: number
+          seller_type?: Database["public"]["Enums"]["seller_type"]
+          shop_name?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string
+          display_name?: string | null
+          district?: string | null
+          id?: string
+          phone?: string | null
+          rating?: number
+          reviews_count?: number
+          seller_type?: Database["public"]["Enums"]["seller_type"]
+          shop_name?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          details: string | null
+          id: string
+          listing_id: string | null
+          reason: string
+          reporter_id: string
+          status: Database["public"]["Enums"]["report_status"]
+          target_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          listing_id?: string | null
+          reason: string
+          reporter_id: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: string | null
+          id?: string
+          listing_id?: string | null
+          reason?: string
+          reporter_id?: string
+          status?: Database["public"]["Enums"]["report_status"]
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          order_id: string
+          rating: number
+          reviewer_id: string
+          target_user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id: string
+          rating: number
+          reviewer_id: string
+          target_user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          order_id?: string
+          rating?: number
+          reviewer_id?: string
+          target_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      boost_kind: "bump" | "highlight" | "top" | "urgent"
+      listing_condition: "new" | "fresh" | "day_old"
+      listing_status: "active" | "sold" | "hidden" | "expired"
+      message_kind: "text" | "offer" | "location" | "system"
+      offer_status: "pending" | "accepted" | "declined" | "cancelled"
+      order_status: "pending" | "paid" | "completed" | "cancelled" | "refunded"
+      report_status: "open" | "reviewing" | "resolved" | "dismissed"
+      seller_type: "private" | "shop"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +627,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      boost_kind: ["bump", "highlight", "top", "urgent"],
+      listing_condition: ["new", "fresh", "day_old"],
+      listing_status: ["active", "sold", "hidden", "expired"],
+      message_kind: ["text", "offer", "location", "system"],
+      offer_status: ["pending", "accepted", "declined", "cancelled"],
+      order_status: ["pending", "paid", "completed", "cancelled", "refunded"],
+      report_status: ["open", "reviewing", "resolved", "dismissed"],
+      seller_type: ["private", "shop"],
+    },
   },
 } as const
