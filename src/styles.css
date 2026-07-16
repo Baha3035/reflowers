@@ -178,3 +178,14 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@utility input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  &:focus { border-color: var(--color-primary); }
+}
