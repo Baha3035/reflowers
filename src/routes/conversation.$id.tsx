@@ -76,7 +76,7 @@ function ConversationPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("id, sender_id, body, kind, created_at")
+        .select("id, sender_id, body, kind, created_at, read_at")
         .eq("conversation_id", id)
         .order("created_at", { ascending: true });
       if (error) throw error;
