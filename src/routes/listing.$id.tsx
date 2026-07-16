@@ -3,6 +3,8 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
 import { LISTINGS, REVIEWS, formatSom, getListing, getSeller } from "@/lib/mock-data";
+import { mapDbListing } from "@/lib/db-listings";
+import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, ShieldCheck, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,10 +19,18 @@ export const Route = createFileRoute("/listing/$id")({
       ...(l ? [{ property: "og:image", content: l.image }] : []),
     ] };
   },
-  loader: ({ params }) => {
-    const l = getListing(params.id);
-    if (!l) throw notFound();
-    return { listing: l };
+  loader: async ({ params }) => {
+    const local = getListing(params.id);
+    if (local) return { listing: local };
+    if (/^[0-9a-f]{8}-/.test(params.id)) {
+      const { data } = await supabase
+        .from("listings")
+        .select("id, seller_id, title, description, price, original_price, category, condition, city, district, images, status, urgent, created_at")
+        .eq("id", params.id)
+        .maybeSingle();
+      if (data) return { listing: mapDbListing(data as never) };
+    }
+    throw notFound();
   },
   component: ListingPage,
   notFoundComponent: NotFound,
