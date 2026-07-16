@@ -22,6 +22,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIdRouteImport } from './routes/shop.$id'
 import { Route as ListingIdRouteImport } from './routes/listing.$id'
+import { Route as ConversationIdRouteImport } from './routes/conversation.$id'
 
 const ShopDashboardRoute = ShopDashboardRouteImport.update({
   id: '/shop-dashboard',
@@ -88,6 +89,11 @@ const ListingIdRoute = ListingIdRouteImport.update({
   path: '/listing/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConversationIdRoute = ConversationIdRouteImport.update({
+  id: '/conversation/$id',
+  path: '/conversation/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
   '/shop-dashboard': typeof ShopDashboardRoute
+  '/conversation/$id': typeof ConversationIdRoute
   '/listing/$id': typeof ListingIdRoute
   '/shop/$id': typeof ShopIdRoute
 }
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
   '/shop-dashboard': typeof ShopDashboardRoute
+  '/conversation/$id': typeof ConversationIdRoute
   '/listing/$id': typeof ListingIdRoute
   '/shop/$id': typeof ShopIdRoute
 }
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/sell': typeof SellRoute
   '/shop-dashboard': typeof ShopDashboardRoute
+  '/conversation/$id': typeof ConversationIdRoute
   '/listing/$id': typeof ListingIdRoute
   '/shop/$id': typeof ShopIdRoute
 }
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/sell'
     | '/shop-dashboard'
+    | '/conversation/$id'
     | '/listing/$id'
     | '/shop/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/sell'
     | '/shop-dashboard'
+    | '/conversation/$id'
     | '/listing/$id'
     | '/shop/$id'
   id:
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/sell'
     | '/shop-dashboard'
+    | '/conversation/$id'
     | '/listing/$id'
     | '/shop/$id'
   fileRoutesById: FileRoutesById
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   SellRoute: typeof SellRoute
   ShopDashboardRoute: typeof ShopDashboardRoute
+  ConversationIdRoute: typeof ConversationIdRoute
   ListingIdRoute: typeof ListingIdRoute
   ShopIdRoute: typeof ShopIdRoute
 }
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListingIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/conversation/$id': {
+      id: '/conversation/$id'
+      path: '/conversation/$id'
+      fullPath: '/conversation/$id'
+      preLoaderRoute: typeof ConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -307,6 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   SellRoute: SellRoute,
   ShopDashboardRoute: ShopDashboardRoute,
+  ConversationIdRoute: ConversationIdRoute,
   ListingIdRoute: ListingIdRoute,
   ShopIdRoute: ShopIdRoute,
 }
