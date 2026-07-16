@@ -82,6 +82,25 @@ function ConversationPage() {
     },
   });
 
+  // Mark incoming messages as read whenever the conversation view loads or
+  // new messages arrive.
+  useEffect(() => {
+    if (!user || !messages.data) return;
+    const hasUnread = messages.data.some(m => m.sender_id !== user.id);
+    if (!hasUnread) return;
+    (async () => {
+      const { error } = await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("conversation_id", id)
+        .neq("sender_id", user.id)
+        .is("read_at", null);
+      if (!error) {
+        qc.invalidateQueries({ queryKey: ["unread-messages", user.id] });
+      }
+    })();
+  }, [id, user, messages.data, qc]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.data]);
