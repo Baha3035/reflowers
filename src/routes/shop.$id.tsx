@@ -40,7 +40,21 @@ function Shop() {
   return <MockShop seller={data.seller} />;
 }
 
-function DbShop({ profile }: { profile: NonNullable<Awaited<ReturnType<typeof supabase["from"]>>["select"] extends never ? never : any> }) {
+type DbProfile = {
+  id: string;
+  display_name: string | null;
+  shop_name: string | null;
+  seller_type: string | null;
+  avatar_url: string | null;
+  city: string | null;
+  verified: boolean | null;
+  rating: number | null;
+  reviews_count: number | null;
+  bio: string | null;
+  created_at: string;
+};
+
+function DbShop({ profile }: { profile: DbProfile }) {
   const isShop = profile.seller_type === "shop";
   const name = (isShop ? profile.shop_name : profile.display_name) || "Продавец";
   const dbListings = useQuery({
