@@ -12,6 +12,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { ReviewSection } from "@/components/marketplace/ReviewSection";
+import { useServerFn } from "@tanstack/react-start";
+import { createDeal } from "@/lib/deals.functions";
 
 export const Route = createFileRoute("/listing/$id")({
   head: ({ params }) => {
@@ -88,6 +90,24 @@ function ListingPage() {
   const similar = LISTINGS.filter(l => l.id !== listing.id && l.flowerType === listing.flowerType).slice(0, 4);
   const [sending, setSending] = useState(false);
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.id);
+  const createDealFn = useServerFn(createDeal);
+  const [buying, setBuying] = useState(false);
+
+  async function wantToBuy() {
+    if (!user) { navigate({ to: "/auth" }); return; }
+    if (!isUuid) { toast.info("Это демо-объявление"); return; }
+    if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
+    setBuying(true);
+    try {
+      const res = await createDealFn({ data: { listing_id: listing.id } });
+      toast.success("Заявка отправлена продавцу");
+      navigate({ to: "/conversation/$id", params: { id: res.conversation_id! } });
+    } catch (e) {
+      toast.error("Не удалось создать сделку: " + (e as Error).message);
+    } finally {
+      setBuying(false);
+    }
+  }
 
   async function startChat() {
     if (!user) { navigate({ to: "/auth" }); return; }
@@ -217,8 +237,11 @@ function ListingPage() {
 
             {/* Desktop actions */}
             <div className="mt-5 hidden gap-2 md:flex">
-              <Link to="/checkout" search={{ id: listing.id }} className="flex-1"><Button size="lg" className="w-full rounded-full">Купить сейчас</Button></Link>
+              <Button size="lg" onClick={wantToBuy} disabled={buying} className="flex-1 w-full rounded-full">{buying ? "…" : "Хочу купить"}</Button>
               <Button size="lg" variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : "Написать"}</Button>
+            </div>
+            <div className="mt-2 hidden text-[11px] text-muted-foreground md:block">
+              ReFlowers не принимает и не хранит деньги. Оплата напрямую продавцу.
             </div>
           </div>
         </div>
@@ -256,7 +279,7 @@ function ListingPage() {
       <div className="fixed bottom-[72px] left-0 right-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md md:hidden">
         <div className="mx-auto flex max-w-md gap-2 p-3">
           <Button variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : "Написать"}</Button>
-          <Link to="/checkout" search={{ id: listing.id }} className="flex-[1.4]"><Button className="w-full rounded-full">Купить · {formatSom(listing.price)}</Button></Link>
+          <Button onClick={wantToBuy} disabled={buying} className="flex-[1.4] w-full rounded-full">{buying ? "…" : `Хочу купить · ${formatSom(listing.price)}`}</Button>
         </div>
       </div>
     </AppLayout>
