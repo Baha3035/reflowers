@@ -651,7 +651,7 @@ export type Database = {
         | "cancelled"
         | "disputed"
       listing_condition: "new" | "fresh" | "day_old"
-      listing_status: "active" | "sold" | "hidden" | "expired"
+      listing_status: "active" | "sold" | "hidden" | "expired" | "reserved"
       message_kind: "text" | "offer" | "location" | "system" | "image"
       offer_status: "pending" | "accepted" | "declined" | "cancelled"
       order_status: "pending" | "paid" | "completed" | "cancelled" | "refunded"
@@ -812,7 +812,7 @@ export const Constants = {
         "disputed",
       ],
       listing_condition: ["new", "fresh", "day_old"],
-      listing_status: ["active", "sold", "hidden", "expired"],
+      listing_status: ["active", "sold", "hidden", "expired", "reserved"],
       message_kind: ["text", "offer", "location", "system", "image"],
       offer_status: ["pending", "accepted", "declined", "cancelled"],
       order_status: ["pending", "paid", "completed", "cancelled", "refunded"],
