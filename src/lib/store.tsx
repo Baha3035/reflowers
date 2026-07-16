@@ -55,15 +55,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Auth session bootstrap + listener
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
-      setSession(s);
+    let mounted = true;
+
+    try {
+      const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+        if (!mounted) return;
+        setSession(s);
+        setAuthLoading(false);
+      });
+
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (!mounted) return;
+          setSession(data.session);
+        })
+        .catch((error) => {
+          console.error("Auth session restore failed", error);
+          if (!mounted) return;
+          setSession(null);
+        })
+        .finally(() => {
+          if (!mounted) return;
+          setAuthLoading(false);
+        });
+
+      return () => {
+        mounted = false;
+        sub.subscription.unsubscribe();
+      };
+    } catch (error) {
+      console.error("Auth initialization failed", error);
+      setSession(null);
       setAuthLoading(false);
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthLoading(false);
-    });
-    return () => { sub.subscription.unsubscribe(); };
+      return () => {
+        mounted = false;
+      };
+    }
   }, []);
 
   const toggleFavorite = useCallback((id: string) => {
@@ -74,7 +102,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const signOut = useCallback(async () => { await supabase.auth.signOut(); }, []);
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      setSession(null);
+    }
+  }, []);
 
   const t = useCallback((key: TKey) => DICT[language][key] ?? DICT.ru[key] ?? key, [language]);
   const value = useMemo(() => ({
