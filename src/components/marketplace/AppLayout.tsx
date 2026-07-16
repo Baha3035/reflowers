@@ -1,10 +1,12 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft, LogIn } from "lucide-react";
+import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft, LogIn, ShieldCheck } from "lucide-react";
 import { useApp, CITIES, type City } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout({ children, hideBottomNav = false }: { children: ReactNode; hideBottomNav?: boolean }) {
   return (
@@ -21,6 +23,19 @@ export function TopHeader() {
   const router = useRouter();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const showBack = pathname !== "/";
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+  });
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 md:px-8">
@@ -90,6 +105,15 @@ export function TopHeader() {
           <Link to="/notifications" className="hidden h-9 w-9 place-items-center rounded-full bg-muted transition hover:bg-muted/70 sm:grid" aria-label="Notifications">
             <Bell className="h-4 w-4" />
           </Link>
+          {isAdmin && (
+            <Link
+              to="/admin"
+              className="hidden h-9 items-center gap-1 rounded-full bg-primary/10 px-3 text-xs font-medium text-primary transition hover:bg-primary/20 sm:inline-flex"
+              aria-label="Admin panel"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> Админ
+            </Link>
+          )}
           {user ? (
             <Link
               to="/profile"
