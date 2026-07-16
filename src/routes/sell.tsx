@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { DISTRICTS } from "@/lib/mock-data";
-import { Camera, ChevronLeft, Sparkles, ChevronDown, TrendingUp, Palette, Crown, Flame, X, Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { Camera, ChevronLeft, Sparkles, ChevronDown, TrendingUp, Palette, Crown, Flame, X, Loader2, AlertTriangle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { analyzeBouquet, type BouquetAnalysis } from "@/lib/analyze-bouquet.functions";
 
 export const Route = createFileRoute("/sell")({
   head: () => ({ meta: [{ title: "Продать букет — ReFlowers" }, { name: "description", content: "Опубликуйте объявление о продаже букета за 30 секунд." }] }),
@@ -31,6 +33,34 @@ function Sell() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [boosts, setBoosts] = useState<Record<string, boolean>>({});
   const analyzed = photos.length > 0;
+  const [ai, setAi] = useState<BouquetAnalysis | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const runAnalyze = useServerFn(analyzeBouquet);
+  const [priceTouched, setPriceTouched] = useState(false);
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [descTouched, setDescTouched] = useState(false);
+
+  // Analyze whenever photos change
+  useEffect(() => {
+    if (photos.length === 0) { setAi(null); return; }
+    let cancelled = false;
+    setAiLoading(true);
+    runAnalyze({ data: { images: photos } })
+      .then(res => {
+        if (cancelled) return;
+        setAi(res);
+        if (res.isBouquet) {
+          if (!titleTouched && res.title) setTitle(res.title);
+          if (!descTouched && res.description) setDesc(res.description);
+          if (!priceTouched && res.priceMin && res.priceMax) {
+            setPrice(String(Math.round((res.priceMin + res.priceMax) / 2)));
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAiLoading(false); });
+    return () => { cancelled = true; };
+  }, [photos, runAnalyze, titleTouched, descTouched, priceTouched]);
 
   const onPickPhotos = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -170,14 +200,27 @@ function Sell() {
             />
 
             {analyzed && (
-              <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-primary"><Sparkles className="h-3.5 w-3.5" /> Умная оценка · заполнено автоматически</div>
-                <ul className="mt-1.5 space-y-0.5 text-[13px] text-foreground/80">
-                  <li>• Букет из 25 красных роз, размер средний</li>
-                  <li>• Свежесть: получен сегодня · как новый</li>
-                  <li>• Рекомендуемая цена: <b>1 800–2 300 сом</b></li>
-                </ul>
-              </div>
+              aiLoading ? (
+                <div className="mt-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Умная оценка анализирует фото…
+                </div>
+              ) : ai && !ai.isBouquet ? (
+                <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive"><AlertTriangle className="h-3.5 w-3.5" /> Похоже, это не букет цветов</div>
+                  <p className="mt-1 text-[13px] text-foreground/80">{ai.reason || "Загрузите фото букета, чтобы получить оценку и опубликовать объявление."}</p>
+                </div>
+              ) : ai ? (
+                <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary"><Sparkles className="h-3.5 w-3.5" /> Умная оценка</div>
+                  <ul className="mt-1.5 space-y-0.5 text-[13px] text-foreground/80">
+                    {ai.title && <li>• {ai.title}</li>}
+                    {ai.description && <li>• {ai.description}</li>}
+                    {ai.priceMin > 0 && ai.priceMax > 0 && (
+                      <li>• Рекомендуемая цена: <b>{ai.priceMin.toLocaleString("ru-RU")}–{ai.priceMax.toLocaleString("ru-RU")} сом</b></li>
+                    )}
+                  </ul>
+                </div>
+              ) : null
             )}
           </div>
 
@@ -185,7 +228,7 @@ function Sell() {
           <div>
             <div className="mb-2 text-sm font-semibold">2. Ваша цена</div>
             <div className="flex items-center gap-2">
-              <Input value={price} onChange={e => setPrice(e.target.value)} type="number" className="text-lg font-semibold" />
+              <Input value={price} onChange={e => { setPrice(e.target.value); setPriceTouched(true); }} type="number" className="text-lg font-semibold" />
               <span className="text-sm text-muted-foreground">сом</span>
             </div>
           </div>
@@ -207,8 +250,8 @@ function Sell() {
           </button>
           {showAdvanced && (
             <div className="space-y-3">
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Название (иначе AI придумает)" />
-              <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Описание (необязательно)" />
+              <Input value={title} onChange={e => { setTitle(e.target.value); setTitleTouched(true); }} placeholder="Название (иначе AI придумает)" />
+              <Input value={desc} onChange={e => { setDesc(e.target.value); setDescTouched(true); }} placeholder="Описание (необязательно)" />
             </div>
           )}
 
@@ -257,7 +300,7 @@ function Sell() {
             <div className="text-[11px] text-muted-foreground">Публикация · {district}</div>
             <div className="font-display text-lg font-semibold text-primary">{price} сом</div>
           </div>
-          <Button size="lg" className="rounded-full px-6" onClick={publish} disabled={!analyzed || submitting}>
+          <Button size="lg" className="rounded-full px-6" onClick={publish} disabled={!analyzed || submitting || aiLoading || (ai ? !ai.isBouquet : false)}>
             {submitting ? "…" : "Опубликовать"}
           </Button>
         </div>
