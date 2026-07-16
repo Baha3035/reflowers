@@ -142,17 +142,24 @@ function ConversationPage() {
   return (
     <AppLayout hideBottomNav>
       <div className="mx-auto flex h-[calc(100dvh-64px)] max-w-3xl flex-col px-2 md:px-6">
-        {/* Listing header */}
-        {listing.data && (
-          <Link to="/listing/$id" params={{ id: listing.data.id }} className="mt-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] hover:bg-muted">
-            {photo && <img src={photo} alt="" className="h-12 w-12 rounded-xl object-cover" />}
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{listing.data.title}</div>
-              <div className="text-xs text-primary font-semibold">{listing.data.price} сом</div>
-            </div>
-            <div className="text-right text-xs text-muted-foreground">с {otherName}</div>
-          </Link>
-        )}
+        {/* User header */}
+        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
+            {other.data?.avatar_url ? (
+              <img src={other.data.avatar_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-6 w-6 text-secondary-foreground" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium">{otherName}</div>
+            {listing.data && (
+              <Link to="/listing/$id" params={{ id: listing.data.id }} className="block truncate text-xs text-muted-foreground hover:text-primary">
+                {listing.data.title}
+              </Link>
+            )}
+          </div>
+        </div>
 
         {/* Messages */}
         <div className="mt-3 flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-3">
