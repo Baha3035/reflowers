@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useApp } from "@/lib/store";
 import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, ShieldCheck, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/listing/$id")({
   head: ({ params }) => {
@@ -54,10 +55,45 @@ function ListingPage() {
     reviewsCount: 0,
   };
   const { favorites, toggleFavorite } = useApp();
+  const { user } = useApp();
+  const navigate = useNavigate();
   const fav = favorites.has(listing.id);
   const gallery = listing.gallery ?? [listing.image];
   const [idx, setIdx] = useState(0);
   const similar = LISTINGS.filter(l => l.id !== listing.id && l.flowerType === listing.flowerType).slice(0, 4);
+  const [sending, setSending] = useState(false);
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.id);
+
+  async function startChat() {
+    if (!user) { navigate({ to: "/auth" }); return; }
+    if (!isUuid) { toast.info("Это демо-объявление"); return; }
+    if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
+    setSending(true);
+    try {
+      const { data: existing } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", user.id)
+        .eq("seller_id", listing.sellerId)
+        .maybeSingle();
+      let convId = existing?.id;
+      if (!convId) {
+        const { data: created, error } = await supabase
+          .from("conversations")
+          .insert({ listing_id: listing.id, buyer_id: user.id, seller_id: listing.sellerId })
+          .select("id")
+          .single();
+        if (error) throw error;
+        convId = created.id;
+      }
+      navigate({ to: "/messages" });
+    } catch (e) {
+      toast.error("Не удалось открыть чат: " + (e as Error).message);
+    } finally {
+      setSending(false);
+    }
+  }
   const discount = listing.oldPrice ? Math.round((1 - listing.price / listing.oldPrice) * 100) : 0;
 
   return (
@@ -157,7 +193,7 @@ function ListingPage() {
             {/* Desktop actions */}
             <div className="mt-5 hidden gap-2 md:flex">
               <Link to="/checkout" search={{ id: listing.id }} className="flex-1"><Button size="lg" className="w-full rounded-full">Купить сейчас</Button></Link>
-              <Link to="/messages" className="flex-1"><Button size="lg" variant="secondary" className="w-full rounded-full"><MessageCircle className="h-4 w-4" /> Написать</Button></Link>
+              <Button size="lg" variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : "Написать"}</Button>
             </div>
           </div>
         </div>
@@ -190,7 +226,7 @@ function ListingPage() {
       {/* Sticky mobile action bar */}
       <div className="fixed bottom-[72px] left-0 right-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md md:hidden">
         <div className="mx-auto flex max-w-md gap-2 p-3">
-          <Link to="/messages" className="flex-1"><Button variant="secondary" className="w-full rounded-full"><MessageCircle className="h-4 w-4" /> Написать</Button></Link>
+          <Button variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : "Написать"}</Button>
           <Link to="/checkout" search={{ id: listing.id }} className="flex-[1.4]"><Button className="w-full rounded-full">Купить · {formatSom(listing.price)}</Button></Link>
         </div>
       </div>
