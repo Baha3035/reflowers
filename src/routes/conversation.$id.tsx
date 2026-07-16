@@ -7,6 +7,7 @@ import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Send, User } from "lucide-react";
 import { toast } from "sonner";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 export const Route = createFileRoute("/conversation/$id")({
   head: () => ({ meta: [{ title: "Диалог — ReFlowers" }] }),
@@ -18,6 +19,7 @@ function ConversationPage() {
   const { user, authLoading } = useApp();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { refetch: refetchUnread } = useUnreadMessages();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -85,6 +87,17 @@ function ConversationPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.data]);
+
+  // Mark incoming messages as read
+  useEffect(() => {
+    if (!user || !messages.data) return;
+    const unreadIds = messages.data.filter(m => m.sender_id !== user.id && !(m as { read_at?: string | null }).read_at).map(m => m.id);
+    if (unreadIds.length === 0) return;
+    (async () => {
+      await supabase.from("messages").update({ read_at: new Date().toISOString() }).in("id", unreadIds);
+      refetchUnread();
+    })();
+  }, [messages.data, user, refetchUnread]);
 
   useEffect(() => {
     if (!user || !conv.data) return;
