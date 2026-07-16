@@ -183,6 +183,30 @@ function ConversationPage() {
         </div>
 
         {/* Composer */}
+        {(() => {
+          const quickReplies = [
+            "Здравствуйте! Ещё актуально?",
+            "Какая цена?",
+            "Можно посмотреть сегодня?",
+            "Где забрать?",
+            "Торг уместен?",
+            "Есть ещё фото?",
+          ];
+          return (
+            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+              {quickReplies.map(q => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => { setText(q); inputRef.current?.focus(); }}
+                  className="shrink-0 rounded-full bg-muted px-3 py-1.5 text-xs text-foreground/80 transition hover:bg-primary/10 hover:text-primary"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
         <form onSubmit={send} className="mt-2 mb-3 flex items-end gap-2 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
           <textarea
             ref={inputRef}
