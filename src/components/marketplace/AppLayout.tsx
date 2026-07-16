@@ -13,7 +13,7 @@ export function AppLayout({ children, hideBottomNav = false }: { children: React
   // Global unread tracker + realtime notifications (no-op when signed out).
   useUnreadMessages();
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-0">
+    <div className={"min-h-screen bg-background md:pb-0 " + (hideBottomNav ? "pb-0" : "pb-24")}>
       <TopHeader />
       <main>{children}</main>
       {!hideBottomNav && <BottomNav />}

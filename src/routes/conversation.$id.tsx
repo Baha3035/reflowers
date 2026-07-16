@@ -5,8 +5,10 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Send, User, ImagePlus, Loader2 } from "lucide-react";
+import { Send, User, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { useServerFn } from "@tanstack/react-start";
+import { analyzeBouquet } from "@/lib/analyze-bouquet.functions";
 
 export const Route = createFileRoute("/conversation/$id")({
   head: () => ({ meta: [{ title: "Диалог — ReFlowers" }] }),
@@ -24,6 +26,8 @@ function ConversationPage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
+  const runAnalyze = useServerFn(analyzeBouquet);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -146,6 +150,7 @@ function ConversationPage() {
     if (!file.type.startsWith("image/")) { toast.error("Нужен файл-изображение"); return; }
     if (file.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
     setUploadingPhoto(true);
+    setPhotoError(null);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -155,6 +160,21 @@ function ConversationPage() {
       if (upErr) throw upErr;
       const { data: signed } = await supabase.storage.from("chat-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
       if (!signed?.signedUrl) throw new Error("Не удалось получить ссылку");
+
+      // Smart check: only allow bouquet/flower photos in chat.
+      try {
+        const check = await runAnalyze({ data: { images: [signed.signedUrl] } });
+        if (!check.isBouquet) {
+          await supabase.storage.from("chat-photos").remove([path]);
+          const msg = check.reason || "Похоже, на фото не букет. Отправляйте только фото цветов.";
+          setPhotoError(msg);
+          toast.error(msg);
+          return;
+        }
+      } catch {
+        // If AI check fails, allow the photo to go through (do not block on infra errors).
+      }
+
       const { error } = await supabase
         .from("messages")
         .insert({
@@ -195,9 +215,9 @@ function ConversationPage() {
 
   return (
     <AppLayout hideBottomNav>
-      <div className="mx-auto flex h-[calc(100dvh-64px)] w-full max-w-3xl flex-col px-2 md:px-6">
+      <div className="mx-auto flex h-[calc(100dvh-64px)] w-full max-w-3xl min-w-0 flex-col overflow-hidden px-2 md:px-6">
         {/* User header */}
-        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
+        <div className="mt-3 flex min-w-0 items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
             {other.data?.avatar_url ? (
               <img src={other.data.avatar_url} alt="" className="h-full w-full object-cover" />
@@ -262,7 +282,7 @@ function ConversationPage() {
             "Есть ещё фото?",
           ];
           return (
-            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+            <div className="mt-2 -mx-2 flex gap-1.5 overflow-x-auto px-2 pb-1">
               {quickReplies.map(q => (
                 <button
                   key={q}
@@ -276,7 +296,14 @@ function ConversationPage() {
             </div>
           );
         })()}
-        <form onSubmit={send} className="mt-2 mb-3 flex w-full items-end gap-1.5 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
+        {photoError && (
+          <div className="mt-2 flex items-start gap-1.5 rounded-2xl border border-destructive/40 bg-destructive/5 p-2 text-[12px] text-destructive">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 flex-1">{photoError}</span>
+            <button type="button" onClick={() => setPhotoError(null)} className="text-[11px] underline">Скрыть</button>
+          </div>
+        )}
+        <form onSubmit={send} className="mt-2 mb-3 flex w-full min-w-0 items-end gap-1.5 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
           <input
             ref={photoInputRef}
             type="file"
@@ -303,7 +330,7 @@ function ConversationPage() {
             placeholder="Напишите сообщение…"
             rows={1}
             maxLength={2000}
-            className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
+            className="max-h-40 w-full min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
           />
           <Button type="submit" size="icon" className="shrink-0 rounded-full" disabled={sending || !text.trim()}>
             <Send className="h-4 w-4" />
