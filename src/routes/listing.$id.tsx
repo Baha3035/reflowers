@@ -87,7 +87,7 @@ function ListingPage() {
         if (error) throw error;
         convId = created.id;
       }
-      navigate({ to: "/messages" });
+      if (convId) navigate({ to: "/conversation/$id", params: { id: convId } });
     } catch (e) {
       toast.error("Не удалось открыть чат: " + (e as Error).message);
     } finally {
