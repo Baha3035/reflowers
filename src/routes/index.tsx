@@ -4,6 +4,7 @@ import { ListingCard } from "@/components/marketplace/ListingCard";
 import { ShopCard } from "@/components/marketplace/ShopCard";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, DISTRICTS, LISTINGS, SELLERS, IMAGES } from "@/lib/mock-data";
+import { useDbListings } from "@/lib/db-listings";
 import { useApp } from "@/lib/store";
 import { ArrowRight, Leaf, Sparkles, ShoppingBag, Plus, Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,9 +13,11 @@ export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
   const { sellerMode, setSellerMode, t } = useApp();
-  const listings = LISTINGS.filter(l => l.sellerType === sellerMode);
-  const nearby = LISTINGS.slice(0, 8);
-  const urgent = LISTINGS.filter(l => l.urgent).slice(0, 4);
+  const { data: dbListings = [] } = useDbListings();
+  const all = [...dbListings, ...LISTINGS];
+  const listings = sellerMode === "private" ? all.filter(l => l.sellerType !== "shop") : all.filter(l => l.sellerType === "shop");
+  const nearby = all.slice(0, 8);
+  const urgent = all.filter(l => l.urgent).slice(0, 4);
   const shops = SELLERS.filter(s => s.type === "shop");
 
   return (

@@ -1,4 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { useApp } from "@/lib/store";
+import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +18,11 @@ export const Route = createFileRoute("/sell")({
 
 function Sell() {
   const navigate = useNavigate();
+  const { user } = useApp();
+  const qc = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [desc, setDesc] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [price, setPrice] = useState("1900");
   const [district, setDistrict] = useState("Центр");
@@ -33,11 +41,38 @@ function Sell() {
   const commission = Math.round(numPrice * 0.07);
   const sellerGets = Math.max(0, numPrice - commission);
 
-  const publish = () => {
-    toast.success(boostTotal > 0
-      ? `Опубликовано с продвижением (+${boostTotal} сом). Активно 24 часа.`
-      : "Объявление опубликовано! Активно 24 часа.");
-    setTimeout(() => navigate({ to: "/profile" }), 600);
+  const publish = async () => {
+    if (!user) {
+      toast.info("Войдите, чтобы опубликовать");
+      navigate({ to: "/auth" });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("listings").insert({
+        seller_id: user.id,
+        title: title || "Свежий букет",
+        description: desc || null,
+        price: numPrice,
+        category: "Смешанные",
+        condition: "fresh",
+        city: "Бишкек",
+        district,
+        images: [],
+        urgent: !!boosts.urgent,
+        status: "active",
+      });
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["db-listings"] });
+      toast.success(boostTotal > 0
+        ? `Опубликовано с продвижением (+${boostTotal} сом).`
+        : "Объявление опубликовано!");
+      setTimeout(() => navigate({ to: "/catalog" }), 500);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Не удалось опубликовать");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -107,8 +142,8 @@ function Sell() {
           </button>
           {showAdvanced && (
             <div className="space-y-3">
-              <Input placeholder="Название (иначе AI придумает)" />
-              <Input placeholder="Описание (необязательно)" />
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Название (иначе AI придумает)" />
+              <Input value={desc} onChange={e => setDesc(e.target.value)} placeholder="Описание (необязательно)" />
             </div>
           )}
 
@@ -157,7 +192,9 @@ function Sell() {
             <div className="text-[11px] text-muted-foreground">Публикация · {district}</div>
             <div className="font-display text-lg font-semibold text-primary">{price} сом</div>
           </div>
-          <Button size="lg" className="rounded-full px-6" onClick={publish} disabled={!analyzed}>Опубликовать</Button>
+          <Button size="lg" className="rounded-full px-6" onClick={publish} disabled={!analyzed || submitting}>
+            {submitting ? "…" : "Опубликовать"}
+          </Button>
         </div>
       </div>
     </AppLayout>

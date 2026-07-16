@@ -4,6 +4,7 @@ import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LISTINGS, DISTRICTS } from "@/lib/mock-data";
+import { useDbListings } from "@/lib/db-listings";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -30,12 +31,14 @@ const OCCASIONS = ["Свидание", "День рождения", "Извин�
 
 function Catalog() {
   const { sellerMode, setSellerMode, t, city } = useApp();
+  const { data: dbListings = [] } = useDbListings();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [sortId, setSortId] = useState(SORTS[0].id);
 
   // Rough "distance" map — for demo we just prefer some districts for Бишкек
   const listings = useMemo(() => {
-    const base = LISTINGS.filter(l => l.sellerType === sellerMode);
+    const all = [...dbListings, ...LISTINGS];
+    const base = sellerMode === "shop" ? all.filter(l => l.sellerType === "shop") : all.filter(l => l.sellerType !== "shop");
     const arr = [...base];
     switch (sortId) {
       case "cheap": arr.sort((a, b) => a.price - b.price); break;
@@ -52,7 +55,7 @@ function Catalog() {
         arr.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (b.oldPrice ?? 0) - (a.oldPrice ?? 0));
     }
     return arr;
-  }, [sellerMode, sortId, city]);
+  }, [sellerMode, sortId, city, dbListings]);
 
   return (
     <AppLayout>
