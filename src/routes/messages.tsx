@@ -1,210 +1,71 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
-import { CONVERSATIONS, DISTRICTS, getListing, getSeller, formatSom } from "@/lib/mock-data";
-import { BadgeCheck, MapPin, Send, MoreHorizontal, DollarSign, AlertCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
-import { toast } from "sonner";
+import { MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/messages")({
   head: () => ({ meta: [{ title: "Сообщения — ReFlowers" }] }),
   component: Messages,
 });
 
-const QUICK = ["Букет ещё доступен?", "Можно оформить доставку?", "Сможете немного снизить цену?", "Когда можно забрать?", "Цветы точно свежие?"];
-
-type ChatMsg = { me: boolean; text: string; kind?: "text" | "offer" | "location" };
-
 function Messages() {
-  const { t } = useApp();
-  const [active, setActive] = useState(CONVERSATIONS[0].id);
-  const conv = CONVERSATIONS.find(c => c.id === active)!;
-  const seller = getSeller(conv.sellerId)!;
-  const listing = getListing(conv.listingId)!;
+  const { user, authLoading } = useApp();
+  const navigate = useNavigate();
 
-  const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { me: false, text: "Здравствуйте! Букет ещё доступен?" },
-    { me: true, text: "Да, ещё доступен. Могу привезти вечером." },
-    { me: false, text: "Отлично! А сможете снизить до 3000?" },
-    { me: true, text: "Могу до 3200, цветы очень свежие 🌹" },
-  ]);
-  const [text, setText] = useState("");
-  const [offerOpen, setOfferOpen] = useState(false);
-  const [offer, setOffer] = useState(String(Math.max(500, listing.price - 300)));
-  const [locOpen, setLocOpen] = useState(false);
-  const [locChoice, setLocChoice] = useState(listing.district);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState("Мошенничество");
+  useEffect(() => {
+    if (!authLoading && !user) navigate({ to: "/auth" });
+  }, [user, authLoading, navigate]);
 
-  const sendOffer = () => {
-    const n = Number(offer);
-    if (!n) return;
-    setMsgs(m => [...m, { me: true, text: `💰 Моё предложение: ${formatSom(n)}`, kind: "offer" }]);
-    setOfferOpen(false);
-    toast.success(t("msg.offerSent"));
-  };
-  const sendLocation = () => {
-    setMsgs(m => [...m, { me: true, text: `📍 ${locChoice} — встретимся здесь`, kind: "location" }]);
-    setLocOpen(false);
-    toast.success(t("msg.locationSent"));
-  };
-  const sendReport = () => {
-    setReportOpen(false);
-    toast.success(t("msg.reportSent"));
-  };
+  const convs = useQuery({
+    queryKey: ["conversations", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("conversations")
+        .select("id, listing_id, buyer_id, seller_id, last_message_at, created_at")
+        .order("last_message_at", { ascending: false });
+      return data ?? [];
+    },
+  });
 
   return (
     <AppLayout>
-      <div className="mx-auto grid max-w-6xl gap-4 px-4 py-4 md:grid-cols-[320px_1fr] md:px-8">
-        {/* Conv list */}
-        <div className="rounded-3xl bg-card p-2 shadow-[var(--shadow-card)]">
-          <h2 className="px-3 py-2 font-display text-lg">Сообщения</h2>
-          <div className="space-y-1">
-            {CONVERSATIONS.map(c => {
-              const s = getSeller(c.sellerId)!;
-              const l = getListing(c.listingId)!;
-              return (
-                <button key={c.id} onClick={() => setActive(c.id)} className={cn("flex w-full items-center gap-3 rounded-2xl p-2.5 text-left transition", active === c.id ? "bg-secondary" : "hover:bg-muted")}>
-                  <img src={l.image} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1"><span className="truncate text-sm font-medium">{s.name}</span>{s.verified && <BadgeCheck className="h-3.5 w-3.5 text-primary" />}</div>
-                    <div className="truncate text-xs text-muted-foreground">{c.lastMessage}</div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[10px] text-muted-foreground">{c.time}</span>
-                    {c.unread > 0 && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">{c.unread}</span>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <div className="mx-auto max-w-3xl px-4 py-6 md:px-8">
+        <h1 className="font-display text-2xl">Сообщения</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Здесь появятся ваши диалоги с покупателями и продавцами.</p>
 
-        {/* Chat */}
-        <div className="flex min-h-[70vh] flex-col rounded-3xl bg-card shadow-[var(--shadow-card)]">
-          <div className="flex items-center gap-3 border-b border-border/60 p-3">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary font-display font-semibold text-secondary-foreground">{seller.name.charAt(0)}</div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1"><span className="font-medium">{seller.name}</span>{seller.verified && <BadgeCheck className="h-4 w-4 text-primary" />}</div>
-              <div className="text-xs text-muted-foreground">отвечает {seller.responseTime}</div>
+        {convs.isLoading ? (
+          <div className="mt-10 text-center text-sm text-muted-foreground">Загрузка…</div>
+        ) : (convs.data ?? []).length === 0 ? (
+          <div className="mt-8 rounded-3xl border border-dashed border-border bg-card/60 p-10 text-center">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <MessageCircle className="h-6 w-6" />
             </div>
-            <button className="grid h-9 w-9 place-items-center rounded-full bg-muted"><MoreHorizontal className="h-4 w-4" /></button>
+            <h2 className="mt-4 font-display text-lg">Пока нет сообщений</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Откройте объявление и напишите продавцу — диалог появится тут.</p>
+            <Link to="/catalog" className="mt-5 inline-block rounded-full bg-primary px-5 py-2 text-sm font-medium text-primary-foreground">Смотреть каталог</Link>
           </div>
-
-          {/* Listing preview */}
-          <div className="flex items-center gap-3 border-b border-border/60 p-3">
-            <img src={listing.image} alt="" className="h-14 w-14 rounded-xl object-cover" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{listing.title}</div>
-              <div className="text-xs text-primary font-semibold">{formatSom(listing.price)}</div>
-              <div className="mt-0.5 inline-flex items-center gap-0.5 text-[11px] text-muted-foreground"><MapPin className="h-3 w-3" />{listing.district}</div>
-            </div>
-          </div>
-
-          <div className="flex-1 space-y-2 overflow-y-auto p-4">
-            {msgs.map((m, i) => (
-              <div key={i} className={cn("flex", m.me && "justify-end")}>
-                <div className={cn(
-                  "max-w-[75%] rounded-2xl px-3 py-2 text-sm",
-                  m.me ? "bg-primary text-primary-foreground" : "bg-muted",
-                  m.kind === "offer" && "ring-2 ring-gold/40",
-                  m.kind === "location" && "ring-2 ring-primary/40",
-                )}>
-                  {m.text}
-                  {m.kind === "location" && (
-                    <div className="mt-1.5 grid h-20 place-items-center rounded-xl bg-background/30 text-[10px]">🗺️ карта</div>
-                  )}
+        ) : (
+          <div className="mt-4 rounded-3xl bg-card p-2 shadow-[var(--shadow-card)]">
+            {(convs.data ?? []).map(c => (
+              <div key={c.id} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary font-display font-semibold text-secondary-foreground">
+                  {c.listing_id.slice(0, 1).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">Диалог по объявлению</div>
+                  <div className="truncate text-xs text-muted-foreground">
+                    {new Date(c.last_message_at).toLocaleString()}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
-
-          <div className="border-t border-border/60 p-3">
-            <div className="mb-2 flex gap-1.5 overflow-x-auto scrollbar-hide">
-              {QUICK.map(q => <button key={q} onClick={() => setMsgs(m => [...m, { me: true, text: q }])} className="shrink-0 rounded-full bg-secondary px-3 py-1.5 text-xs text-secondary-foreground hover:bg-secondary/80">{q}</button>)}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setOfferOpen(true)}><DollarSign className="h-4 w-4" /> {t("msg.offer")}</Button>
-              <Button variant="ghost" size="sm" className="rounded-full" onClick={() => setLocOpen(true)}><MapPin className="h-4 w-4" /> {t("msg.location")}</Button>
-              <Button variant="ghost" size="sm" className="rounded-full text-destructive" onClick={() => setReportOpen(true)}><AlertCircle className="h-4 w-4" /> {t("msg.report")}</Button>
-            </div>
-            <div className="mt-2 flex items-center gap-2 rounded-2xl bg-muted p-2 pl-4">
-              <input value={text} onChange={e => setText(e.target.value)} placeholder={t("msg.placeholder")} className="w-full bg-transparent text-sm outline-none" onKeyDown={e => { if (e.key === "Enter" && text) { setMsgs(m => [...m, { me: true, text }]); setText(""); } }} />
-              <button onClick={() => { if (text) { setMsgs(m => [...m, { me: true, text }]); setText(""); } }} className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground"><Send className="h-4 w-4" /></button>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Offer dialog */}
-      <Dialog open={offerOpen} onOpenChange={setOfferOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("msg.offerTitle")}</DialogTitle>
-            <DialogDescription>{t("msg.offerDesc")}</DialogDescription>
-          </DialogHeader>
-          <div className="text-xs text-muted-foreground">Текущая цена: <b className="text-foreground">{formatSom(listing.price)}</b></div>
-          <div className="flex items-center gap-2">
-            <Input type="number" value={offer} onChange={e => setOffer(e.target.value)} className="text-lg font-semibold" />
-            <span className="text-sm text-muted-foreground">сом</span>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[0.9, 0.8, 0.7].map(k => (
-              <button key={k} onClick={() => setOffer(String(Math.round(listing.price * k)))} className="rounded-full bg-muted px-3 py-1 text-xs">−{Math.round((1 - k) * 100)}%</button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOfferOpen(false)}>{t("msg.cancel")}</Button>
-            <Button onClick={sendOffer}>{t("msg.send")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Location dialog */}
-      <Dialog open={locOpen} onOpenChange={setLocOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("msg.locationTitle")}</DialogTitle>
-            <DialogDescription>{t("msg.locationDesc")}</DialogDescription>
-          </DialogHeader>
-          <div className="grid h-32 place-items-center rounded-2xl bg-secondary text-sm text-secondary-foreground">🗺️ Карта — превью</div>
-          <div className="flex flex-wrap gap-1.5">
-            {DISTRICTS.map(d => (
-              <button key={d} onClick={() => setLocChoice(d)} className={cn("rounded-full border px-3 py-1.5 text-xs font-medium", locChoice === d ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground/80")}>{d}</button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLocOpen(false)}>{t("msg.cancel")}</Button>
-            <Button onClick={sendLocation}>{t("msg.send")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Report dialog */}
-      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("msg.reportTitle")}</DialogTitle>
-            <DialogDescription>{t("msg.reportDesc")}</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-1.5">
-            {["Мошенничество", "Спам", "Оскорбления", "Букет несоответствует описанию", "Другое"].map(r => (
-              <label key={r} className="flex cursor-pointer items-center gap-2 rounded-2xl border border-border p-2.5 text-sm">
-                <input type="radio" name="report" checked={reportReason === r} onChange={() => setReportReason(r)} className="accent-primary" />
-                <span>{r}</span>
-              </label>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReportOpen(false)}>{t("msg.cancel")}</Button>
-            <Button variant="destructive" onClick={sendReport}>{t("msg.send")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AppLayout>
   );
 }

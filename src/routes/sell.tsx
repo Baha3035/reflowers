@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { DISTRICTS } from "@/lib/mock-data";
-import { Camera, ChevronLeft, Sparkles, ChevronDown, TrendingUp, Palette, Crown, Flame } from "lucide-react";
-import { useState } from "react";
+import { Camera, ChevronLeft, Sparkles, ChevronDown, TrendingUp, Palette, Crown, Flame, X, Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sell")({
@@ -24,11 +24,46 @@ function Sell() {
   const [desc, setDesc] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [price, setPrice] = useState("1900");
   const [district, setDistrict] = useState("Центр");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [boosts, setBoosts] = useState<Record<string, boolean>>({});
   const analyzed = photos.length > 0;
+
+  const onPickPhotos = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    if (!user) {
+      toast.info("Войдите, чтобы загрузить фото");
+      navigate({ to: "/auth" });
+      return;
+    }
+    const remaining = 6 - photos.length;
+    const chosen = Array.from(files).slice(0, remaining);
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of chosen) {
+        if (!file.type.startsWith("image/")) continue;
+        if (file.size > 10 * 1024 * 1024) { toast.error(`${file.name}: больше 10 МБ`); continue; }
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("listing-photos").upload(path, file, {
+          contentType: file.type, upsert: false,
+        });
+        if (upErr) { toast.error(upErr.message); continue; }
+        const { data: signed } = await supabase.storage.from("listing-photos").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+        if (signed?.signedUrl) uploaded.push(signed.signedUrl);
+      }
+      if (uploaded.length) setPhotos(p => [...p, ...uploaded]);
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = "";
+    }
+  };
+
+  const removePhoto = (i: number) => setPhotos(p => p.filter((_, idx) => idx !== i));
 
   const BOOSTS = [
     { id: "up", label: "Поднять объявление", price: 50, icon: TrendingUp, desc: "+3× просмотров" },
@@ -58,7 +93,7 @@ function Sell() {
         condition: "fresh",
         city: "Бишкек",
         district,
-        images: [],
+        images: photos,
         urgent: !!boosts.urgent,
         status: "active",
       });
@@ -95,14 +130,44 @@ function Sell() {
             </div>
             <div className="grid grid-cols-3 gap-2">
               {Array.from({ length: 6 }).map((_, i) => {
-                const has = photos[i];
+                const url = photos[i];
+                if (url) {
+                  return (
+                    <div key={i} className="relative aspect-square overflow-hidden rounded-2xl bg-secondary">
+                      <img src={url} alt="" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => removePhoto(i)} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-foreground shadow">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                }
+                const isNext = i === photos.length;
                 return (
-                  <button key={i} onClick={() => setPhotos(p => p.length > i ? p : [...p, `demo-${p.length}`])} className={cn("aspect-square rounded-2xl border-2 border-dashed transition", has ? "border-transparent bg-secondary" : "border-border bg-muted hover:border-primary")}>
-                    {has ? <div className="grid h-full w-full place-items-center text-2xl">🌸</div> : <Camera className="mx-auto h-5 w-5 text-muted-foreground" />}
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={!isNext || uploading}
+                    onClick={() => fileInput.current?.click()}
+                    className={cn(
+                      "grid aspect-square place-items-center rounded-2xl border-2 border-dashed transition",
+                      isNext ? "border-border bg-muted hover:border-primary" : "border-border/40 bg-muted/50",
+                    )}
+                  >
+                    {isNext && uploading
+                      ? <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      : <Camera className="h-5 w-5 text-muted-foreground" />}
                   </button>
                 );
               })}
             </div>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={e => onPickPhotos(e.target.files)}
+            />
 
             {analyzed && (
               <div className="mt-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
