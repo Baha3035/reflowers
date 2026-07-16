@@ -135,17 +135,22 @@ function Home() {
         </div>
       </Section>
 
-      {/* Sustainability */}
+      {/* Inspiration */}
       <section className="mx-auto mt-10 mb-12 max-w-7xl px-4 md:px-8">
-        <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[oklch(0.9_0.05_145)] to-[oklch(0.94_0.03_60)] p-8 md:p-12">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1 text-xs font-medium text-foreground/70"><Leaf className="h-3 w-3" /> Экологично</span>
-            <h2 className="mt-3 font-display text-2xl leading-tight text-foreground md:text-4xl">Подарите цветам вторую жизнь</h2>
-            <p className="mt-2 max-w-lg text-sm text-foreground/70 md:text-base">
-              Каждый перепроданный букет — это меньше отходов и больше красивых моментов. Красивые цветы не должны попадать в мусор.
+        <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[oklch(0.94_0.04_150)] via-[oklch(0.96_0.03_90)] to-[oklch(0.93_0.05_30)] p-8 md:p-14">
+          <div className="relative z-10 max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1 text-xs font-medium text-foreground/70 backdrop-blur"><Sparkles className="h-3 w-3 text-primary" /> ReFlowers</span>
+            <h2 className="mt-3 font-display text-3xl leading-[1.05] text-foreground md:text-5xl">
+              Каждый день —<br/><span className="italic text-primary">повод для цветов</span>
+            </h2>
+            <p className="mt-3 max-w-lg text-sm text-foreground/70 md:text-base">
+              Дарите букеты чаще. Радуйте близких без повода. Мы делаем цветы доступнее — от свежих поставок магазинов до букетов, которыми хочется поделиться.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/catalog"><Button size="lg" className="rounded-full">Смотреть букеты <ArrowRight className="h-4 w-4" /></Button></Link>
+            </div>
           </div>
-          <div className="pointer-events-none absolute -right-8 -bottom-8 text-[10rem] leading-none opacity-20 md:text-[16rem]">🌿</div>
+          <div className="pointer-events-none absolute -right-10 -bottom-10 text-[10rem] leading-none opacity-25 md:text-[18rem]">💐</div>
         </div>
       </section>
     </AppLayout>
