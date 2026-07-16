@@ -16,9 +16,11 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user, authLoading } = useApp();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [sellerType, setSellerType] = useState<"private" | "shop">("private");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [shopName, setShopName] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,11 @@ function AuthPage() {
           email, password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { display_name: name || email.split("@")[0] },
+            data: {
+              display_name: name || (sellerType === "shop" ? shopName : email.split("@")[0]),
+              seller_type: sellerType,
+              shop_name: sellerType === "shop" ? shopName : null,
+            },
           },
         });
         if (error) throw error;
@@ -62,7 +68,32 @@ function AuthPage() {
             {mode === "signin" ? "Войдите, чтобы продавать и покупать" : "Создайте аккаунт за 30 секунд"}
           </p>
 
+          {mode === "signup" && (
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              {([
+                { id: "private", title: "Частное лицо", desc: "Продать свой букет" },
+                { id: "shop", title: "Магазин", desc: "Флористический бизнес" },
+              ] as const).map(o => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => setSellerType(o.id)}
+                  className={
+                    "rounded-2xl border p-3 text-left transition " +
+                    (sellerType === o.id ? "border-primary bg-primary/5" : "border-border bg-background hover:border-primary/50")
+                  }
+                >
+                  <div className="text-sm font-semibold">{o.title}</div>
+                  <div className="mt-0.5 text-[11px] text-muted-foreground">{o.desc}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
           <form onSubmit={submit} className="mt-6 space-y-3">
+            {mode === "signup" && sellerType === "shop" && (
+              <Input value={shopName} onChange={e => setShopName(e.target.value)} required placeholder="Название магазина" />
+            )}
             {mode === "signup" && (
               <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ваше имя" autoComplete="name" />
             )}
