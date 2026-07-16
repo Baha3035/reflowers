@@ -38,11 +38,12 @@ function Profile() {
     queryKey: ["my-listings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("listings")
         .select("id, seller_id, title, description, price, original_price, category, condition, city, district, images, status, urgent, created_at")
         .eq("seller_id", user!.id)
         .order("created_at", { ascending: false });
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -94,9 +95,17 @@ function Profile() {
         </div>
 
         <h2 className="mt-8 font-display text-lg">Мои активные объявления</h2>
-        {active.length === 0 ? (
+        {myListings.isLoading ? (
+          <div className="mt-3 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Загрузка…</div>
+        ) : myListings.error ? (
+          <div className="mt-3 rounded-2xl border border-destructive/40 bg-destructive/5 p-6 text-center text-sm text-destructive">
+            Не удалось загрузить объявления: {(myListings.error as Error).message}
+          </div>
+        ) : active.length === 0 ? (
           <div className="mt-3 rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
-            У вас пока нет объявлений. <Link to="/sell" className="text-primary underline">Опубликовать</Link>
+            {activeAll.length > 0
+              ? <>У вас {activeAll.length} объявлений, но нет активных. <Link to="/sell" className="text-primary underline">Опубликовать новое</Link></>
+              : <>У вас пока нет объявлений. <Link to="/sell" className="text-primary underline">Опубликовать</Link></>}
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
