@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,8 +154,8 @@ export function DealCard({ conversationId }: { conversationId: string }) {
     qc.invalidateQueries({ queryKey: ["seller-rep", order?.seller_id] });
   };
 
-  // Realtime: refresh when this order's events change
-  useMemo(() => {
+  // Realtime: refresh when this order's events/status change
+  useEffect(() => {
     if (!order?.id) return;
     const ch = supabase
       .channel(`deal:${order.id}`)
