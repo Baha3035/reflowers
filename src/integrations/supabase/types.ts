@@ -527,10 +527,7 @@ export type Database = {
       }
     }
     Functions: {
-      is_conversation_participant: {
-        Args: { _other_id: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
