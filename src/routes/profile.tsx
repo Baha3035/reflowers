@@ -1,11 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { mapDbListing } from "@/lib/db-listings";
-import { BadgeCheck, Bell, ChevronRight, Globe, Heart, HelpCircle, LogOut, MapPin, Package, Settings, ShoppingBag, Star, Store, User as UserIcon, Wallet } from "lucide-react";
+import { BadgeCheck, Bell, Check, ChevronRight, Globe, Heart, HelpCircle, LogOut, MapPin, Package, Settings, ShoppingBag, Star, Store, Trash2, User as UserIcon, Wallet } from "lucide-react";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 
 export const Route = createFileRoute("/profile")({
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/profile")({
 function Profile() {
   const { user, authLoading, signOut } = useApp();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -45,6 +46,28 @@ function Profile() {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const markSold = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("listings").update({ status: "sold" }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-listings", user?.id] });
+      qc.invalidateQueries({ queryKey: ["db-listings"] });
+    },
+  });
+
+  const removeListing = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("listings").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-listings", user?.id] });
+      qc.invalidateQueries({ queryKey: ["db-listings"] });
     },
   });
 
@@ -109,7 +132,30 @@ function Profile() {
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-            {active.map(l => <ListingCard key={l.id} listing={mapDbListing(l as never)} />)}
+            {active.map(l => (
+              <div key={l.id} className="flex flex-col gap-2">
+                <ListingCard listing={mapDbListing(l as never)} />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => markSold.mutate(l.id)}
+                    disabled={markSold.isPending}
+                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Продано
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { if (confirm("Удалить объявление?")) removeListing.mutate(l.id); }}
+                    disabled={removeListing.isPending}
+                    className="inline-flex items-center justify-center gap-1 rounded-full bg-muted px-3 py-2 text-xs font-medium text-destructive disabled:opacity-50"
+                    aria-label="Удалить"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
