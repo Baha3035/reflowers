@@ -5,7 +5,7 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Send, User } from "lucide-react";
+import { Send, User, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/conversation/$id")({
@@ -20,8 +20,10 @@ function ConversationPage() {
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -74,7 +76,7 @@ function ConversationPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("messages")
-        .select("id, sender_id, body, kind, created_at")
+        .select("id, sender_id, body, kind, meta, created_at")
         .eq("conversation_id", id)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -139,6 +141,40 @@ function ConversationPage() {
     }
   }
 
+  async function sendPhoto(file: File) {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) { toast.error("Нужен файл-изображение"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("chat-photos").upload(path, file, {
+        contentType: file.type, upsert: false,
+      });
+      if (upErr) throw upErr;
+      const { data: signed } = await supabase.storage.from("chat-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (!signed?.signedUrl) throw new Error("Не удалось получить ссылку");
+      const { error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: id,
+          sender_id: user.id,
+          body: null,
+          kind: "image" as never,
+          meta: { url: signed.signedUrl, path } as never,
+        });
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["messages", id] });
+      qc.invalidateQueries({ queryKey: ["conversations", user.id] });
+    } catch (err) {
+      toast.error("Не удалось отправить фото: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  }
+
   if (authLoading || conv.isLoading) {
     return <AppLayout><div className="p-10 text-center text-sm text-muted-foreground">Загрузка…</div></AppLayout>;
   }
@@ -159,7 +195,7 @@ function ConversationPage() {
 
   return (
     <AppLayout hideBottomNav>
-      <div className="mx-auto flex h-[calc(100dvh-64px)] max-w-3xl flex-col px-2 md:px-6">
+      <div className="mx-auto flex h-[calc(100dvh-64px)] w-full max-w-3xl flex-col px-2 md:px-6">
         {/* User header */}
         <div className="mt-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
@@ -191,11 +227,19 @@ function ConversationPage() {
             <div className="space-y-2">
               {(messages.data ?? []).map(m => {
                 const mine = m.sender_id === user?.id;
+                const isImage = m.kind === "image";
+                const imgUrl = isImage ? (m.meta as { url?: string } | null)?.url : undefined;
                 return (
                   <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
-                    <div className={"max-w-[80%] rounded-2xl px-3.5 py-2 text-sm " + (mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card rounded-bl-sm shadow-sm")}>
-                      <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                      <div className={"mt-0.5 text-[10px] " + (mine ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                    <div className={"max-w-[80%] min-w-0 rounded-2xl text-sm " + (isImage ? "overflow-hidden p-1 " : "px-3.5 py-2 ") + (mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card rounded-bl-sm shadow-sm")}>
+                      {isImage && imgUrl ? (
+                        <a href={imgUrl} target="_blank" rel="noreferrer" className="block">
+                          <img src={imgUrl} alt="Фото" className="max-h-72 w-full rounded-xl object-cover" loading="lazy" />
+                        </a>
+                      ) : (
+                        <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                      )}
+                      <div className={"mt-0.5 px-1 text-[10px] " + (mine ? "text-primary-foreground/70" : "text-muted-foreground")}>
                         {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     </div>
@@ -232,7 +276,25 @@ function ConversationPage() {
             </div>
           );
         })()}
-        <form onSubmit={send} className="mt-2 mb-3 flex items-end gap-2 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
+        <form onSubmit={send} className="mt-2 mb-3 flex w-full items-end gap-1.5 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) sendPhoto(f); }}
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="shrink-0 rounded-full"
+            onClick={() => photoInputRef.current?.click()}
+            disabled={uploadingPhoto}
+            aria-label="Прикрепить фото"
+          >
+            {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+          </Button>
           <textarea
             ref={inputRef}
             value={text}
@@ -241,9 +303,9 @@ function ConversationPage() {
             placeholder="Напишите сообщение…"
             rows={1}
             maxLength={2000}
-            className="max-h-40 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
+            className="max-h-40 min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
           />
-          <Button type="submit" size="icon" className="rounded-full" disabled={sending || !text.trim()}>
+          <Button type="submit" size="icon" className="shrink-0 rounded-full" disabled={sending || !text.trim()}>
             <Send className="h-4 w-4" />
           </Button>
         </form>
