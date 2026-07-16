@@ -173,7 +173,19 @@ function Profile() {
                 <div className="text-center text-xs text-muted-foreground">Пока нет проданных букетов</div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                  {soldListings.map(l => <ListingCard key={l.id} listing={mapDbListing(l as never)} />)}
+                  {soldListings.map(l => (
+                    <div key={l.id} className="flex flex-col gap-2">
+                      <ListingCard listing={mapDbListing(l as never)} />
+                      <button
+                        type="button"
+                        onClick={() => { if (confirm("Удалить проданное объявление?")) removeListing.mutate(l.id); }}
+                        disabled={removeListing.isPending}
+                        className="inline-flex items-center justify-center gap-1 rounded-full bg-muted px-3 py-2 text-xs font-medium text-destructive disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" /> Удалить
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
