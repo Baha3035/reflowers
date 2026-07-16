@@ -55,7 +55,7 @@ function isChunkLoadError(error: unknown) {
   ].some(pattern => text.includes(pattern));
 }
 
-async function clearRuntimeCache(clearLocalData = false) {
+async function clearRuntimeCache() {
   if (typeof window === "undefined") return;
 
   try {
@@ -65,22 +65,11 @@ async function clearRuntimeCache(clearLocalData = false) {
     }
   } catch {}
 
-  if (clearLocalData) {
-    try {
-      const keys = Object.keys(window.localStorage);
-      for (const key of keys) {
-        if (key.startsWith("gm_") || key.startsWith("sb-")) {
-          window.localStorage.removeItem(key);
-        }
-      }
-    } catch {}
-  } else {
-    try {
-      window.localStorage.removeItem("gm_favs");
-      window.localStorage.removeItem("gm_lang");
-      window.localStorage.removeItem("gm_city");
-    } catch {}
-  }
+  try {
+    window.localStorage.removeItem("gm_favs");
+    window.localStorage.removeItem("gm_lang");
+    window.localStorage.removeItem("gm_city");
+  } catch {}
 }
 
 function reloadFresh() {
@@ -98,7 +87,7 @@ function ClientErrorRecovery() {
         if (window.sessionStorage.getItem(RECOVERY_FLAG)) return;
         window.sessionStorage.setItem(RECOVERY_FLAG, "chunk");
       } catch {}
-      void clearRuntimeCache(false).finally(reloadFresh);
+      void clearRuntimeCache().finally(reloadFresh);
     };
 
     const onError = (event: ErrorEvent) => recover(event.error ?? event.message);
@@ -126,7 +115,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       if (window.sessionStorage.getItem(RECOVERY_FLAG)) return;
       window.sessionStorage.setItem(RECOVERY_FLAG, isChunkLoadError(error) ? "chunk" : "boundary");
     } catch {}
-    void clearRuntimeCache(!isChunkLoadError(error)).finally(reloadFresh);
+    if (isChunkLoadError(error)) {
+      void clearRuntimeCache().finally(reloadFresh);
+    }
   }, [error]);
 
   return (
@@ -141,7 +132,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              void clearRuntimeCache(false).finally(() => {
+              void clearRuntimeCache().finally(() => {
                 router.invalidate();
                 reset();
                 reloadFresh();
@@ -153,7 +144,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           </button>
           <button
             onClick={() => {
-              void clearRuntimeCache(true).finally(reloadFresh);
+              void clearRuntimeCache().finally(reloadFresh);
             }}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
