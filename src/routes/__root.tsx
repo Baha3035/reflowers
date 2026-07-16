@@ -36,125 +36,37 @@ function NotFoundComponent() {
   );
 }
 
-const RECOVERY_FLAG = "reflowers-client-recovery-v2";
-
-function getErrorText(error: unknown) {
-  if (error instanceof Error) return `${error.name} ${error.message} ${error.stack ?? ""}`;
-  return String(error ?? "");
-}
-
-function isChunkLoadError(error: unknown) {
-  const text = getErrorText(error).toLowerCase();
-  return [
-    "chunkloaderror",
-    "loading chunk",
-    "failed to fetch dynamically imported module",
-    "error loading dynamically imported module",
-    "importing a module script failed",
-    "module script",
-  ].some(pattern => text.includes(pattern));
-}
-
-async function clearRuntimeCache() {
-  if (typeof window === "undefined") return;
-
-  try {
-    if ("caches" in window) {
-      const keys = await window.caches.keys();
-      await Promise.all(keys.map(key => window.caches.delete(key)));
-    }
-  } catch {}
-
-  try {
-    window.localStorage.removeItem("gm_favs");
-    window.localStorage.removeItem("gm_lang");
-    window.localStorage.removeItem("gm_city");
-  } catch {}
-}
-
-function reloadFresh() {
-  if (typeof window === "undefined") return;
-  const url = new URL(window.location.href);
-  url.searchParams.set("refresh", String(Date.now()));
-  window.location.replace(url.toString());
-}
-
-function ClientErrorRecovery() {
-  useEffect(() => {
-    const recover = (error: unknown) => {
-      if (!isChunkLoadError(error)) return;
-      try {
-        if (window.sessionStorage.getItem(RECOVERY_FLAG)) return;
-        window.sessionStorage.setItem(RECOVERY_FLAG, "chunk");
-      } catch {}
-      void clearRuntimeCache().finally(reloadFresh);
-    };
-
-    const onError = (event: ErrorEvent) => recover(event.error ?? event.message);
-    const onRejection = (event: PromiseRejectionEvent) => recover(event.reason);
-
-    window.addEventListener("error", onError);
-    window.addEventListener("unhandledrejection", onRejection);
-    return () => {
-      window.removeEventListener("error", onError);
-      window.removeEventListener("unhandledrejection", onRejection);
-    };
-  }, []);
-
-  return null;
-}
-
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-
-    if (typeof window === "undefined") return;
-    try {
-      if (window.sessionStorage.getItem(RECOVERY_FLAG)) return;
-      window.sessionStorage.setItem(RECOVERY_FLAG, isChunkLoadError(error) ? "chunk" : "boundary");
-    } catch {}
-    if (isChunkLoadError(error)) {
-      void clearRuntimeCache().finally(reloadFresh);
-    }
   }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Страница не загрузилась
+          This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Обновите приложение. Если ошибка повторяется, сбросьте локальный кэш этой страницы.
+          Something went wrong on our end. You can try refreshing or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              void clearRuntimeCache().finally(() => {
-                router.invalidate();
-                reset();
-                reloadFresh();
-              });
+              router.invalidate();
+              reset();
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Обновить
-          </button>
-          <button
-            onClick={() => {
-              void clearRuntimeCache().finally(reloadFresh);
-            }}
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Сбросить кэш
+            Try again
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            На главную
+            Go home
           </a>
         </div>
       </div>
@@ -214,7 +126,6 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppProvider>
-        <ClientErrorRecovery />
         <Outlet />
         <Toaster position="top-center" />
       </AppProvider>
