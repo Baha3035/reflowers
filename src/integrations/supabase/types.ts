@@ -534,7 +534,7 @@ export type Database = {
       boost_kind: "bump" | "highlight" | "top" | "urgent"
       listing_condition: "new" | "fresh" | "day_old"
       listing_status: "active" | "sold" | "hidden" | "expired"
-      message_kind: "text" | "offer" | "location" | "system"
+      message_kind: "text" | "offer" | "location" | "system" | "image"
       offer_status: "pending" | "accepted" | "declined" | "cancelled"
       order_status: "pending" | "paid" | "completed" | "cancelled" | "refunded"
       report_status: "open" | "reviewing" | "resolved" | "dismissed"
@@ -670,7 +670,7 @@ export const Constants = {
       boost_kind: ["bump", "highlight", "top", "urgent"],
       listing_condition: ["new", "fresh", "day_old"],
       listing_status: ["active", "sold", "hidden", "expired"],
-      message_kind: ["text", "offer", "location", "system"],
+      message_kind: ["text", "offer", "location", "system", "image"],
       offer_status: ["pending", "accepted", "declined", "cancelled"],
       order_status: ["pending", "paid", "completed", "cancelled", "refunded"],
       report_status: ["open", "reviewing", "resolved", "dismissed"],
