@@ -164,8 +164,6 @@ function Profile() {
           </div>
         )}
 
-        <h2 className="mt-8 font-display text-lg">Настройки</h2>
-
         <ReviewSection targetUserId={user.id} />
 
         <h2 className="mt-8 font-display text-lg">Настройки</h2>
