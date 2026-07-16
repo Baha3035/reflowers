@@ -36,7 +36,7 @@ function NotFoundComponent() {
   );
 }
 
-const RECOVERY_FLAG = "reflowers-client-recovery-v1";
+const RECOVERY_FLAG = "reflowers-client-recovery-v2";
 
 function getErrorText(error: unknown) {
   if (error instanceof Error) return `${error.name} ${error.message} ${error.stack ?? ""}`;
@@ -66,7 +66,14 @@ async function clearRuntimeCache(clearLocalData = false) {
   } catch {}
 
   if (clearLocalData) {
-    try { window.localStorage.clear(); } catch {}
+    try {
+      const keys = Object.keys(window.localStorage);
+      for (const key of keys) {
+        if (key.startsWith("gm_") || key.startsWith("sb-")) {
+          window.localStorage.removeItem(key);
+        }
+      }
+    } catch {}
   } else {
     try {
       window.localStorage.removeItem("gm_favs");
@@ -114,12 +121,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
 
-    if (typeof window === "undefined" || !isChunkLoadError(error)) return;
+    if (typeof window === "undefined") return;
     try {
       if (window.sessionStorage.getItem(RECOVERY_FLAG)) return;
-      window.sessionStorage.setItem(RECOVERY_FLAG, "boundary");
+      window.sessionStorage.setItem(RECOVERY_FLAG, isChunkLoadError(error) ? "chunk" : "boundary");
     } catch {}
-    void clearRuntimeCache(false).finally(reloadFresh);
+    void clearRuntimeCache(!isChunkLoadError(error)).finally(reloadFresh);
   }, [error]);
 
   return (
