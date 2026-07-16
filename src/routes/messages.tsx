@@ -5,7 +5,6 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { MessageCircle, User } from "lucide-react";
-import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 export const Route = createFileRoute("/messages")({
   head: () => ({ meta: [{ title: "Сообщения — ReFlowers" }] }),
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/messages")({
 function Messages() {
   const { user, authLoading } = useApp();
   const navigate = useNavigate();
-  const { byConversation } = useUnreadMessages();
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -77,7 +75,6 @@ function Messages() {
               const name = p
                 ? (p.seller_type === "shop" ? (p.shop_name || p.display_name) : p.display_name)
                 : "Собеседник";
-              const unread = byConversation.get(c.id) ?? 0;
               return (
                 <Link key={c.id} to="/conversation/$id" params={{ id: c.id }} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
@@ -89,19 +86,12 @@ function Messages() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <div className={"truncate " + (unread > 0 ? "font-semibold text-foreground" : "font-medium")}>{name}</div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <div className="text-[11px] text-muted-foreground">
-                          {new Date(c.last_message_at).toLocaleDateString()}
-                        </div>
-                        {unread > 0 && (
-                          <span className="grid h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">{unread > 99 ? "99+" : unread}</span>
-                        )}
+                      <div className="truncate font-medium">{name}</div>
+                      <div className="shrink-0 text-[11px] text-muted-foreground">
+                        {new Date(c.last_message_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <div className={"truncate text-xs " + (unread > 0 ? "text-foreground/80" : "text-muted-foreground")}>
-                      {unread > 0 ? `${unread} новых сообщений` : "Открыть диалог"}
-                    </div>
+                    <div className="truncate text-xs text-muted-foreground">Открыть диалог</div>
                   </div>
                 </Link>
               );
