@@ -42,7 +42,17 @@ function NotFound() {
 
 function ListingPage() {
   const { listing } = Route.useLoaderData();
-  const seller = getSeller(listing.sellerId)!;
+  const seller = getSeller(listing.sellerId) ?? {
+    id: listing.sellerId,
+    type: "private" as const,
+    name: "Продавец",
+    rating: 5,
+    sales: 0,
+    responseTime: "≈30 мин",
+    memberSince: "новый",
+    verified: false,
+    reviewsCount: 0,
+  };
   const { favorites, toggleFavorite } = useApp();
   const fav = favorites.has(listing.id);
   const gallery = listing.gallery ?? [listing.image];
