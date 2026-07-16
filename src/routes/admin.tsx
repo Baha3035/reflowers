@@ -3,6 +3,8 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getUserEmails } from "@/lib/admin.functions";
 import { useEffect } from "react";
 import { ShieldCheck, Users, Package, ShoppingBag, Store, User as UserIcon } from "lucide-react";
 
@@ -49,6 +51,13 @@ function AdminPage() {
         .limit(200);
       return data ?? [];
     },
+  });
+
+  const fetchEmails = useServerFn(getUserEmails);
+  const emails = useQuery({
+    queryKey: ["admin-emails"],
+    enabled: !!isAdmin,
+    queryFn: () => fetchEmails(),
   });
 
   const listings = useQuery({
@@ -123,6 +132,7 @@ function AdminPage() {
               <thead className="bg-muted text-xs text-muted-foreground">
                 <tr>
                   <th className="p-3 text-left">Имя</th>
+                  <th className="p-3 text-left">Email</th>
                   <th className="p-3 text-left">Тип</th>
                   <th className="p-3 text-left">Город</th>
                   <th className="p-3 text-left">Рейтинг</th>
@@ -138,6 +148,7 @@ function AdminPage() {
                         {p.seller_type === "shop" ? (p.shop_name || p.display_name) : p.display_name}
                       </div>
                     </td>
+                    <td className="p-3 text-xs text-muted-foreground">{emails.data?.[p.id] ?? "—"}</td>
                     <td className="p-3 text-xs">{p.seller_type === "shop" ? "Магазин" : "Частное"}</td>
                     <td className="p-3 text-xs">{p.city}</td>
                     <td className="p-3 text-xs">{p.rating} ({p.reviews_count})</td>
@@ -145,7 +156,7 @@ function AdminPage() {
                   </tr>
                 ))}
                 {(!profiles.data || profiles.data.length === 0) && (
-                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={5}>Пока нет участников</td></tr>
+                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={6}>Пока нет участников</td></tr>
                 )}
               </tbody>
             </table>
