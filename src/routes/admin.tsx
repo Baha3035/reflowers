@@ -2,11 +2,17 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getUserEmails } from "@/lib/admin.functions";
+import { deleteUserAsAdmin, getUserEmails, getUserStats } from "@/lib/admin.functions";
 import { useEffect } from "react";
-import { ShieldCheck, Users, Package, ShoppingBag, Store, User as UserIcon } from "lucide-react";
+import { ShieldCheck, Users, Package, ShoppingBag, Store, Trash2, User as UserIcon } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Админ — ReFlowers" }, { name: "description", content: "Панель управления участниками ReFlowers." }] }),
@@ -58,6 +64,28 @@ function AdminPage() {
     queryKey: ["admin-emails"],
     enabled: !!isAdmin,
     queryFn: () => fetchEmails(),
+  });
+
+  const fetchStats = useServerFn(getUserStats);
+  const stats = useQuery({
+    queryKey: ["admin-user-stats"],
+    enabled: !!isAdmin,
+    queryFn: () => fetchStats(),
+  });
+
+  const qc = useQueryClient();
+  const deleteUser = useServerFn(deleteUserAsAdmin);
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => deleteUser({ data: { userId } }),
+    onSuccess: () => {
+      toast.success("Пользователь удалён");
+      qc.invalidateQueries({ queryKey: ["admin-profiles"] });
+      qc.invalidateQueries({ queryKey: ["admin-emails"] });
+      qc.invalidateQueries({ queryKey: ["admin-user-stats"] });
+      qc.invalidateQueries({ queryKey: ["admin-listings"] });
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Не удалось удалить"),
   });
 
   const listings = useQuery({
@@ -135,12 +163,18 @@ function AdminPage() {
                   <th className="p-3 text-left">Email</th>
                   <th className="p-3 text-left">Тип</th>
                   <th className="p-3 text-left">Город</th>
+                  <th className="p-3 text-left">Объявл.</th>
+                  <th className="p-3 text-left">Продажи</th>
+                  <th className="p-3 text-left">Покупки</th>
                   <th className="p-3 text-left">Рейтинг</th>
                   <th className="p-3 text-left">Дата</th>
+                  <th className="p-3 text-right">Действия</th>
                 </tr>
               </thead>
               <tbody>
-                {(profiles.data ?? []).map(p => (
+                {(profiles.data ?? []).map(p => {
+                  const s = stats.data?.[p.id];
+                  return (
                   <tr key={p.id} className="border-t border-border/60">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -151,12 +185,52 @@ function AdminPage() {
                     <td className="p-3 text-xs text-muted-foreground">{emails.data?.[p.id] ?? "—"}</td>
                     <td className="p-3 text-xs">{p.seller_type === "shop" ? "Магазин" : "Частное"}</td>
                     <td className="p-3 text-xs">{p.city}</td>
+                    <td className="p-3 text-xs">
+                      <span className="font-medium">{s?.listings_total ?? 0}</span>
+                      <span className="ml-1 text-muted-foreground">({s?.listings_active ?? 0}/{s?.listings_sold ?? 0})</span>
+                    </td>
+                    <td className="p-3 text-xs">
+                      {s?.sales_count ?? 0} <span className="text-primary">· {(s?.sales_revenue ?? 0).toLocaleString()} с</span>
+                    </td>
+                    <td className="p-3 text-xs">
+                      {s?.purchases_count ?? 0} <span className="text-muted-foreground">· {(s?.purchases_spent ?? 0).toLocaleString()} с</span>
+                    </td>
                     <td className="p-3 text-xs">{p.rating} ({p.reviews_count})</td>
                     <td className="p-3 text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</td>
+                    <td className="p-3 text-right">
+                      {p.id !== user?.id && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-destructive hover:bg-destructive/10"
+                              aria-label="Удалить"
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Удалить пользователя?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {emails.data?.[p.id] ?? p.display_name}. Будут удалены объявления, сообщения, заказы и отзывы. Действие необратимо.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Отмена</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteMutation.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Удалить
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
                 {(!profiles.data || profiles.data.length === 0) && (
-                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={6}>Пока нет участников</td></tr>
+                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={10}>Пока нет участников</td></tr>
                 )}
               </tbody>
             </table>
