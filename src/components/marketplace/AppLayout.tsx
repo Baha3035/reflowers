@@ -148,11 +148,12 @@ export function TopHeader() {
 
 export function BottomNav() {
   const { t } = useApp();
+  const { total: unread } = useUnreadMessages();
   const items = [
     { to: "/", label: t("nav.home"), icon: Home, exact: true },
     { to: "/catalog", label: t("nav.catalog"), icon: Grid3x3 },
     { to: "/sell", label: t("nav.sell"), icon: Plus, primary: true },
-    { to: "/messages", label: t("nav.messages"), icon: MessageCircle },
+    { to: "/messages", label: t("nav.messages"), icon: MessageCircle, badge: unread },
     { to: "/profile", label: t("nav.profile"), icon: User },
   ];
   return (
@@ -173,7 +174,12 @@ export function BottomNav() {
                 <item.icon className="h-5 w-5" />
               </span>
             ) : (
-              <item.icon className="h-5 w-5" />
+              <span className="relative">
+                <item.icon className="h-5 w-5" />
+                {"badge" in item && item.badge ? (
+                  <span className="absolute -right-2 -top-1 grid h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">{item.badge > 99 ? "99+" : item.badge}</span>
+                ) : null}
+              </span>
             )}
             <span className={cn(item.primary && "-mt-2")}>{item.label}</span>
           </Link>
