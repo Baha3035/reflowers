@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { mapDbListing } from "@/lib/db-listings";
 import { BadgeCheck, Bell, Check, ChevronRight, Globe, Heart, HelpCircle, LogOut, MapPin, Package, Settings, ShoppingBag, Star, Store, Trash2, User as UserIcon, Wallet } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 
 export const Route = createFileRoute("/profile")({
@@ -17,6 +19,7 @@ function Profile() {
   const { user, authLoading, signOut } = useApp();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [showSold, setShowSold] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -81,7 +84,8 @@ function Profile() {
   const initial = displayName.charAt(0).toUpperCase();
   const activeAll = myListings.data ?? [];
   const active = activeAll.filter(l => l.status === "active");
-  const sold = activeAll.filter(l => l.status === "sold").length;
+  const soldListings = activeAll.filter(l => l.status === "sold");
+  const sold = soldListings.length;
   const created = p?.created_at ? new Date(p.created_at) : new Date(user.created_at);
   const monthNames = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const since = `с ${monthNames[created.getMonth()]} ${created.getFullYear()}`;
@@ -161,15 +165,26 @@ function Profile() {
 
         <h2 className="mt-8 font-display text-lg">Настройки</h2>
         <div className="mt-3 divide-y divide-border rounded-3xl bg-card shadow-[var(--shadow-card)]">
-          <Row icon={ShoppingBag} label="Мои заказы" />
-          <Row icon={Package} label="Проданные букеты" />
+          <Row icon={ShoppingBag} label="Мои заказы" onClick={() => toast.info("История заказов скоро появится")} />
+          <Row icon={Package} label={`Проданные букеты · ${sold}`} onClick={() => setShowSold(v => !v)} />
+          {showSold && (
+            <div className="px-4 py-3">
+              {soldListings.length === 0 ? (
+                <div className="text-center text-xs text-muted-foreground">Пока нет проданных букетов</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {soldListings.map(l => <ListingCard key={l.id} listing={mapDbListing(l as never)} />)}
+                </div>
+              )}
+            </div>
+          )}
           <Row icon={Heart} label="Избранное" to="/favorites" />
-          <Row icon={Wallet} label="Способы оплаты" />
-          <Row icon={MapPin} label="Адреса доставки" />
-          <Row icon={Globe} label="Язык · Русский" />
+          <Row icon={Wallet} label="Способы оплаты" onClick={() => toast.info("Способы оплаты скоро появятся")} />
+          <Row icon={MapPin} label="Адреса доставки" onClick={() => toast.info("Адреса доставки скоро появятся")} />
+          <Row icon={Globe} label="Язык · Русский" onClick={() => toast.info("Смена языка — в шапке сверху")} />
           <Row icon={Bell} label="Уведомления" to="/notifications" />
-          <Row icon={HelpCircle} label="Поддержка" />
-          <Row icon={Settings} label="Настройки" />
+          <Row icon={HelpCircle} label="Поддержка" onClick={() => toast.info("Свяжитесь с нами: support@reflowers.kg")} />
+          <Row icon={Settings} label="Настройки" onClick={() => toast.info("Настройки скоро появятся")} />
           <Row icon={LogOut} label="Выйти" destructive onClick={() => { signOut().then(() => navigate({ to: "/" })); }} />
         </div>
       </div>
