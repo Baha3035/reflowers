@@ -44,6 +44,15 @@ export function useUnreadMessages(): UnreadInfo {
     staleTime: 15_000,
   });
 
+  // Show unread count in the tab title (works on desktop AND mobile browsers,
+  // unlike Notification API which is limited on iOS Safari without PWA install).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const base = document.title.replace(/^\(\d+\)\s*/, "");
+    const total = q.data?.total ?? 0;
+    document.title = total > 0 ? `(${total}) ${base}` : base;
+  }, [q.data?.total]);
+
   // Ask for browser notification permission once, after user has signed in.
   useEffect(() => {
     if (!user || permAsked.current) return;
