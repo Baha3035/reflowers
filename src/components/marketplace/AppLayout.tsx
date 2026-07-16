@@ -1,6 +1,7 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft } from "lucide-react";
+import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft, LogIn, LogOut } from "lucide-react";
 import { useApp, CITIES, type City } from "@/lib/store";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -17,7 +18,7 @@ export function AppLayout({ children, hideBottomNav = false }: { children: React
 }
 
 export function TopHeader() {
-  const { language, setLanguage, city, setCity, t } = useApp();
+  const { language, setLanguage, city, setCity, t, user, signOut } = useApp();
   const router = useRouter();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const showBack = pathname !== "/";
@@ -90,9 +91,27 @@ export function TopHeader() {
           <Link to="/notifications" className="hidden h-9 w-9 place-items-center rounded-full bg-muted transition hover:bg-muted/70 sm:grid" aria-label="Notifications">
             <Bell className="h-4 w-4" />
           </Link>
-          <Link to="/profile" className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90" aria-label={t("nav.profile")}>
-            <User className="h-4 w-4" />
-          </Link>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90" aria-label={t("nav.profile")}>
+                  <User className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-44">
+                <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">{user.email}</div>
+                <DropdownMenuItem onClick={() => router.navigate({ to: "/profile" })}>{t("nav.profile")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.navigate({ to: "/favorites" })}>{t("nav.favorites")}</DropdownMenuItem>
+                <DropdownMenuItem onClick={async () => { await signOut(); toast.success("Вы вышли"); router.navigate({ to: "/" }); }}>
+                  <LogOut className="h-4 w-4 mr-1" /> Выйти
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth" className="inline-flex h-9 items-center gap-1 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground transition hover:opacity-90">
+              <LogIn className="h-3.5 w-3.5" /> Войти
+            </Link>
+          )}
           <Link to="/sell" className="ml-1 hidden md:block">
             <Button size="sm" className="rounded-full">
               <Plus className="h-4 w-4" /> {t("header.sell")}
