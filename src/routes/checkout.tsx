@@ -1,11 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useApp } from "@/lib/store";
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LISTINGS, formatSom, getListing } from "@/lib/mock-data";
-import { useState } from "react";
+import { useDbListings } from "@/lib/db-listings";
 import { cn } from "@/lib/utils";
 import { MapPin, Zap, ChevronDown, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -20,19 +23,49 @@ const PAY = ["Наличными", "Банковской картой", "MBank",
 
 function Checkout() {
   const { id } = Route.useSearch();
-  const listing = getListing(id ?? "") ?? LISTINGS[0];
+  const { data: dbListings = [] } = useDbListings();
+  const listing = (id ? (dbListings.find(l => l.id === id) ?? getListing(id)) : undefined) ?? LISTINGS[0];
+  const { user } = useApp();
+  const navigate = useNavigate();
   const [pay, setPay] = useState("MBank");
   const [anon, setAnon] = useState(false);
   const [gift, setGift] = useState("");
   const [showDetails, setShowDetails] = useState(false);
-  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
   const commission = Math.round(listing.price * 0.07);
   const sellerGets = listing.price - commission;
   const total = listing.price;
 
-  const submit = () => {
-    toast.success("Заказ оформлен! Продавец скоро свяжется с вами.");
-    setTimeout(() => navigate({ to: "/profile" }), 700);
+  const isUuid = /^[0-9a-f]{8}-/.test(listing.id);
+  const submit = async () => {
+    if (!user) {
+      toast.info("Войдите, чтобы оформить заказ");
+      navigate({ to: "/auth" });
+      return;
+    }
+    if (!isUuid) {
+      toast.success("Демо-заказ оформлен! Реальные заказы доступны для объявлений с сайта.");
+      setTimeout(() => navigate({ to: "/profile" }), 700);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.from("orders").insert({
+        listing_id: listing.id,
+        buyer_id: user.id,
+        seller_id: listing.sellerId,
+        price: listing.price,
+        buyer_note: gift || null,
+        status: "pending",
+      });
+      if (error) throw error;
+      toast.success("Заказ оформлен! Продавец скоро свяжется с вами.");
+      setTimeout(() => navigate({ to: "/profile" }), 700);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Не удалось оформить заказ");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -61,8 +94,8 @@ function Checkout() {
               <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
               <span>Оплата защищена. Деньги придут продавцу <b className="text-foreground">после получения букета</b>. Если что-то не так — вернём.</span>
             </div>
-            <Button size="lg" className="mt-3 w-full rounded-full" onClick={submit}>
-              <Zap className="h-4 w-4" /> Заказать сейчас
+            <Button size="lg" className="mt-3 w-full rounded-full" onClick={submit} disabled={submitting}>
+              <Zap className="h-4 w-4" /> {submitting ? "…" : "Заказать сейчас"}
             </Button>
             <button onClick={() => setShowDetails(s => !s)} className="mx-auto mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
               {showDetails ? "Скрыть" : "Изменить"} детали <ChevronDown className={cn("h-3 w-3 transition", showDetails && "rotate-180")} />
@@ -120,8 +153,8 @@ function Checkout() {
               <div className="flex justify-between"><span>Продавец получит</span><span className="text-foreground">{formatSom(sellerGets)}</span></div>
               <div className="mt-1.5">Деньги придут продавцу после подтверждения получения букета.</div>
             </div>
-            <Button size="lg" className="mt-4 w-full rounded-full" onClick={submit}>
-              Оформить заказ
+            <Button size="lg" className="mt-4 w-full rounded-full" onClick={submit} disabled={submitting}>
+              {submitting ? "…" : "Оформить заказ"}
             </Button>
             <Link to="/catalog" className="mt-2 block text-center text-xs text-muted-foreground hover:underline">← Продолжить покупки</Link>
           </div>
