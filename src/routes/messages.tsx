@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, User } from "lucide-react";
 
 export const Route = createFileRoute("/messages")({
   head: () => ({ meta: [{ title: "Сообщения — ReFlowers" }] }),
@@ -31,6 +31,25 @@ function Messages() {
     },
   });
 
+  const otherIds = useMemo(() => {
+    if (!user || !convs.data) return [];
+    return [...new Set(convs.data.map(c => (c.buyer_id === user.id ? c.seller_id : c.buyer_id)))];
+  }, [convs.data, user]);
+
+  const profiles = useQuery({
+    queryKey: ["conversation-profiles", otherIds],
+    enabled: otherIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, shop_name, seller_type, avatar_url")
+        .in("id", otherIds);
+      const map = new Map<string, NonNullable<typeof data>[number]>();
+      (data ?? []).forEach(p => map.set(p.id, p));
+      return map;
+    },
+  });
+
   return (
     <AppLayout>
       <div className="mx-auto max-w-3xl px-4 py-6 md:px-8">
@@ -50,19 +69,33 @@ function Messages() {
           </div>
         ) : (
           <div className="mt-4 rounded-3xl bg-card p-2 shadow-[var(--shadow-card)]">
-            {(convs.data ?? []).map(c => (
-              <Link key={c.id} to="/conversation/$id" params={{ id: c.id }} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary font-display font-semibold text-secondary-foreground">
-                  {c.listing_id.slice(0, 1).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">Диалог по объявлению</div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {new Date(c.last_message_at).toLocaleString()}
+            {(convs.data ?? []).map(c => {
+              const otherId = user?.id === c.buyer_id ? c.seller_id : c.buyer_id;
+              const p = profiles.data?.get(otherId);
+              const name = p
+                ? (p.seller_type === "shop" ? (p.shop_name || p.display_name) : p.display_name)
+                : "Собеседник";
+              return (
+                <Link key={c.id} to="/conversation/$id" params={{ id: c.id }} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
+                    {p?.avatar_url ? (
+                      <img src={p.avatar_url} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-5 w-5 text-secondary-foreground" />
+                    )}
                   </div>
-                </div>
-              </Link>
-            ))}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="truncate font-medium">{name}</div>
+                      <div className="shrink-0 text-[11px] text-muted-foreground">
+                        {new Date(c.last_message_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">Открыть диалог</div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>
