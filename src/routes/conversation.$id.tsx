@@ -47,7 +47,7 @@ function ConversationPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("listings")
-        .select("id, title, price, photos")
+        .select("id, title, price, images")
         .eq("id", conv.data!.listing_id)
         .maybeSingle();
       return data;
@@ -137,7 +137,7 @@ function ConversationPage() {
   const otherName = other.data
     ? (other.data.seller_type === "shop" ? (other.data.shop_name || other.data.display_name) : other.data.display_name)
     : "Собеседник";
-  const photo = (listing.data?.photos as string[] | null)?.[0];
+  const photo = listing.data?.images?.[0];
 
   return (
     <AppLayout hideBottomNav>
