@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { MessageCircle, User } from "lucide-react";
+import { useUnreadMessages } from "@/hooks/use-unread-messages";
 
 export const Route = createFileRoute("/messages")({
   head: () => ({ meta: [{ title: "Сообщения — ReFlowers" }] }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/messages")({
 function Messages() {
   const { user, authLoading } = useApp();
   const navigate = useNavigate();
+  const unread = useUnreadMessages();
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
@@ -75,6 +77,7 @@ function Messages() {
               const name = p
                 ? (p.seller_type === "shop" ? (p.shop_name || p.display_name) : p.display_name)
                 : "Собеседник";
+              const count = unread.byConversation[c.id] ?? 0;
               return (
                 <Link key={c.id} to="/conversation/$id" params={{ id: c.id }} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
@@ -86,12 +89,21 @@ function Messages() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <div className="truncate font-medium">{name}</div>
-                      <div className="shrink-0 text-[11px] text-muted-foreground">
-                        {new Date(c.last_message_at).toLocaleDateString()}
+                      <div className={"truncate " + (count > 0 ? "font-semibold" : "font-medium")}>{name}</div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground">
+                          {new Date(c.last_message_at).toLocaleDateString()}
+                        </span>
+                        {count > 0 && (
+                          <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="truncate text-xs text-muted-foreground">Открыть диалог</div>
+                    <div className={"truncate text-xs " + (count > 0 ? "text-foreground/80" : "text-muted-foreground")}>
+                      {count > 0 ? `${count} новых сообщений` : "Открыть диалог"}
+                    </div>
                   </div>
                 </Link>
               );
