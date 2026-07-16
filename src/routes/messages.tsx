@@ -51,7 +51,7 @@ function Messages() {
         ) : (
           <div className="mt-4 rounded-3xl bg-card p-2 shadow-[var(--shadow-card)]">
             {(convs.data ?? []).map(c => (
-              <div key={c.id} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
+              <Link key={c.id} to="/conversation/$id" params={{ id: c.id }} className="flex items-center gap-3 rounded-2xl p-3 hover:bg-muted">
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-secondary font-display font-semibold text-secondary-foreground">
                   {c.listing_id.slice(0, 1).toUpperCase()}
                 </div>
@@ -61,7 +61,7 @@ function Messages() {
                     {new Date(c.last_message_at).toLocaleString()}
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
