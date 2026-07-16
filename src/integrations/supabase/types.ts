@@ -480,7 +480,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          display_name: string | null
+          district: string | null
+          id: string | null
+          rating: number | null
+          reviews_count: number | null
+          seller_type: Database["public"]["Enums"]["seller_type"] | null
+          shop_name: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          district?: string | null
+          id?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          seller_type?: Database["public"]["Enums"]["seller_type"] | null
+          shop_name?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          district?: string | null
+          id?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          seller_type?: Database["public"]["Enums"]["seller_type"] | null
+          shop_name?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
