@@ -92,21 +92,13 @@ export function TopHeader() {
             <Bell className="h-4 w-4" />
           </Link>
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90" aria-label={t("nav.profile")}>
-                  <User className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-44">
-                <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">{user.email}</div>
-                <DropdownMenuItem onClick={() => router.navigate({ to: "/profile" })}>{t("nav.profile")}</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.navigate({ to: "/favorites" })}>{t("nav.favorites")}</DropdownMenuItem>
-                <DropdownMenuItem onClick={async () => { await signOut(); toast.success("Вы вышли"); router.navigate({ to: "/" }); }}>
-                  <LogOut className="h-4 w-4 mr-1" /> Выйти
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Link
+              to="/profile"
+              className="grid h-9 w-9 place-items-center rounded-full bg-primary text-primary-foreground transition hover:opacity-90"
+              aria-label={t("nav.profile")}
+            >
+              <User className="h-4 w-4" />
+            </Link>
           ) : (
             <Link to="/auth" className="inline-flex h-9 items-center gap-1 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground transition hover:opacity-90">
               <LogIn className="h-3.5 w-3.5" /> Войти
