@@ -10,6 +10,8 @@ import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, S
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { ReviewSection } from "@/components/marketplace/ReviewSection";
 
 export const Route = createFileRoute("/listing/$id")({
   head: ({ params }) => {
@@ -43,7 +45,30 @@ function NotFound() {
 
 function ListingPage() {
   const { listing } = Route.useLoaderData();
-  const seller = getSeller(listing.sellerId) ?? {
+  const isSellerUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.sellerId);
+  const dbSeller = useQuery({
+    queryKey: ["listing-seller", listing.sellerId],
+    enabled: isSellerUuid,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name, shop_name, seller_type, avatar_url, verified, rating, reviews_count")
+        .eq("id", listing.sellerId)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const seller = getSeller(listing.sellerId) ?? (dbSeller.data ? {
+    id: dbSeller.data.id,
+    type: (dbSeller.data.seller_type === "shop" ? "shop" : "private") as "shop" | "private",
+    name: (dbSeller.data.seller_type === "shop" ? dbSeller.data.shop_name : dbSeller.data.display_name) || "Продавец",
+    rating: Number(dbSeller.data.rating ?? 0),
+    sales: 0,
+    responseTime: "≈30 мин",
+    memberSince: "новый",
+    verified: !!dbSeller.data.verified,
+    reviewsCount: dbSeller.data.reviews_count ?? 0,
+  } : {
     id: listing.sellerId,
     type: "private" as const,
     name: "Продавец",
@@ -53,7 +78,7 @@ function ListingPage() {
     memberSince: "новый",
     verified: false,
     reviewsCount: 0,
-  };
+  });
   const { favorites, toggleFavorite } = useApp();
   const { user } = useApp();
   const navigate = useNavigate();
@@ -199,21 +224,25 @@ function ListingPage() {
         </div>
 
         {/* Reviews */}
-        <section className="mt-10">
-          <h2 className="font-display text-xl">Отзывы о продавце</h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            {REVIEWS.slice(0, 4).map(r => (
-              <div key={r.id} className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{r.author}</span>
-                  <span className="inline-flex items-center gap-0.5 text-xs"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{r.rating}</span>
+        {isSellerUuid ? (
+          <ReviewSection targetUserId={listing.sellerId} />
+        ) : (
+          <section className="mt-10">
+            <h2 className="font-display text-xl">Отзывы о продавце</h2>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {REVIEWS.slice(0, 4).map(r => (
+                <div key={r.id} className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{r.author}</span>
+                    <span className="inline-flex items-center gap-0.5 text-xs"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{r.rating}</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-foreground/80">{r.text}</p>
+                  <div className="mt-1 text-[11px] text-muted-foreground">{r.date}</div>
                 </div>
-                <p className="mt-1.5 text-sm text-foreground/80">{r.text}</p>
-                <div className="mt-1 text-[11px] text-muted-foreground">{r.date}</div>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-10">
           <h2 className="font-display text-xl">Похожие букеты</h2>
