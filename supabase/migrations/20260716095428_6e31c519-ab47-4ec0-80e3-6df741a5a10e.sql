@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_recompute_profile_rating() FROM PUBLIC, anon, authenticated;
