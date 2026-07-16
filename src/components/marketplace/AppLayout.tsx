@@ -1,7 +1,6 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft, LogIn, LogOut } from "lucide-react";
+import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft, LogIn } from "lucide-react";
 import { useApp, CITIES, type City } from "@/lib/store";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -18,7 +17,7 @@ export function AppLayout({ children, hideBottomNav = false }: { children: React
 }
 
 export function TopHeader() {
-  const { language, setLanguage, city, setCity, t, user, signOut } = useApp();
+  const { language, setLanguage, city, setCity, t, user } = useApp();
   const router = useRouter();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const showBack = pathname !== "/";
