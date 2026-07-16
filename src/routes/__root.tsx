@@ -83,10 +83,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов Бишкека." },
       { name: "author", content: "ReFlowers" },
       { property: "og:title", content: "ReFlowers — маркетплейс цветов в Бишкеке" },
-      { property: "og:description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов." },
+      { property: "og:description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов Бишкека." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "ReFlowers — маркетплейс цветов в Бишкеке" },
+      { name: "twitter:description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов Бишкека." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cfe6ab14-254f-49e4-889f-6827bd0aacae/id-preview-cac22ce8--4ab0411c-3807-447f-aa66-99750f9fb580.lovable.app-1784184614515.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/cfe6ab14-254f-49e4-889f-6827bd0aacae/id-preview-cac22ce8--4ab0411c-3807-447f-aa66-99750f9fb580.lovable.app-1784184614515.png" },
     ],
     links: [
       {
