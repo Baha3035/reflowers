@@ -422,32 +422,52 @@ export type Database = {
       reviews: {
         Row: {
           comment: string | null
+          conversation_id: string | null
           created_at: string
           id: string
-          order_id: string
+          listing_id: string | null
+          order_id: string | null
           rating: number
           reviewer_id: string
           target_user_id: string
         }
         Insert: {
           comment?: string | null
+          conversation_id?: string | null
           created_at?: string
           id?: string
-          order_id: string
+          listing_id?: string | null
+          order_id?: string | null
           rating: number
           reviewer_id: string
           target_user_id: string
         }
         Update: {
           comment?: string | null
+          conversation_id?: string | null
           created_at?: string
           id?: string
-          order_id?: string
+          listing_id?: string | null
+          order_id?: string | null
           rating?: number
           reviewer_id?: string
           target_user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reviews_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reviews_order_id_fkey"
             columns: ["order_id"]
