@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 export function AppLayout({ children, hideBottomNav = false }: { children: ReactNode; hideBottomNav?: boolean }) {
   return (
@@ -23,6 +24,7 @@ export function TopHeader() {
   const router = useRouter();
   const pathname = useRouterState({ select: s => s.location.pathname });
   const showBack = pathname !== "/";
+  const { total: unread } = useUnreadMessages();
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin", user?.id],
     enabled: !!user,
@@ -73,12 +75,15 @@ export function TopHeader() {
           {[
             { to: "/", label: t("nav.home") },
             { to: "/catalog", label: t("nav.catalog") },
-            { to: "/messages", label: t("nav.messages") },
+            { to: "/messages", label: t("nav.messages"), badge: unread },
             { to: "/favorites", label: t("nav.favorites") },
             { to: "/shop-dashboard", label: t("nav.shops") },
           ].map(l => (
-            <Link key={l.to} to={l.to} className="rounded-full px-3 py-1.5 text-sm text-foreground/70 transition hover:bg-muted hover:text-foreground" activeProps={{ className: "bg-muted text-foreground font-medium" }} activeOptions={{ exact: l.to === "/" }}>
+            <Link key={l.to} to={l.to} className="relative rounded-full px-3 py-1.5 text-sm text-foreground/70 transition hover:bg-muted hover:text-foreground" activeProps={{ className: "bg-muted text-foreground font-medium" }} activeOptions={{ exact: l.to === "/" }}>
               {l.label}
+              {l.badge ? (
+                <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">{l.badge > 99 ? "99+" : l.badge}</span>
+              ) : null}
             </Link>
           ))}
         </nav>
@@ -102,8 +107,11 @@ export function TopHeader() {
             <option value="ky">KG</option>
             <option value="en">EN</option>
           </select>
-          <Link to="/notifications" className="hidden h-9 w-9 place-items-center rounded-full bg-muted transition hover:bg-muted/70 sm:grid" aria-label="Notifications">
+          <Link to="/notifications" className="relative hidden h-9 w-9 place-items-center rounded-full bg-muted transition hover:bg-muted/70 sm:grid" aria-label="Notifications">
             <Bell className="h-4 w-4" />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">{unread > 99 ? "99+" : unread}</span>
+            )}
           </Link>
           {isAdmin && (
             <Link
@@ -140,11 +148,12 @@ export function TopHeader() {
 
 export function BottomNav() {
   const { t } = useApp();
+  const { total: unread } = useUnreadMessages();
   const items = [
     { to: "/", label: t("nav.home"), icon: Home, exact: true },
     { to: "/catalog", label: t("nav.catalog"), icon: Grid3x3 },
     { to: "/sell", label: t("nav.sell"), icon: Plus, primary: true },
-    { to: "/messages", label: t("nav.messages"), icon: MessageCircle },
+    { to: "/messages", label: t("nav.messages"), icon: MessageCircle, badge: unread },
     { to: "/profile", label: t("nav.profile"), icon: User },
   ];
   return (
@@ -165,7 +174,12 @@ export function BottomNav() {
                 <item.icon className="h-5 w-5" />
               </span>
             ) : (
-              <item.icon className="h-5 w-5" />
+              <span className="relative">
+                <item.icon className="h-5 w-5" />
+                {"badge" in item && item.badge ? (
+                  <span className="absolute -right-2 -top-1 grid h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">{item.badge > 99 ? "99+" : item.badge}</span>
+                ) : null}
+              </span>
             )}
             <span className={cn(item.primary && "-mt-2")}>{item.label}</span>
           </Link>
