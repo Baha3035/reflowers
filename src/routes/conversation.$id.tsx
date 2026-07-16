@@ -137,7 +137,6 @@ function ConversationPage() {
   const otherName = other.data
     ? (other.data.seller_type === "shop" ? (other.data.shop_name || other.data.display_name) : other.data.display_name)
     : "Собеседник";
-  const photo = listing.data?.images?.[0];
 
   return (
     <AppLayout hideBottomNav>
