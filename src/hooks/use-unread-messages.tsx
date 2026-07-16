@@ -9,6 +9,10 @@ export type UnreadInfo = {
   byConversation: Record<string, number>;
 };
 
+// Module-level guard so the realtime subscription runs only once per user,
+// even when the hook is called from multiple components (AppLayout, TopHeader, BottomNav).
+let activeSubscriberUserId: string | null = null;
+
 /**
  * Global unread-messages tracker.
  * - Queries all unread messages for the current user.
@@ -51,8 +55,12 @@ export function useUnreadMessages(): UnreadInfo {
   }, [user]);
 
   // Global realtime subscription for new messages addressed to this user.
+  // Only one subscriber per user at any time (see activeSubscriberUserId).
   useEffect(() => {
     if (!user) return;
+    if (activeSubscriberUserId && activeSubscriberUserId !== user.id) return;
+    if (activeSubscriberUserId === user.id) return;
+    activeSubscriberUserId = user.id;
     const channel = supabase
       .channel(`user-messages:${user.id}`)
       .on(
@@ -90,7 +98,10 @@ export function useUnreadMessages(): UnreadInfo {
         },
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+      if (activeSubscriberUserId === user.id) activeSubscriberUserId = null;
+    };
   }, [user, qc]);
 
   return q.data ?? { total: 0, byConversation: {} };
