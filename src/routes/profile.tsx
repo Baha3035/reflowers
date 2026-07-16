@@ -9,6 +9,7 @@ import { BadgeCheck, Bell, Check, ChevronRight, Globe, Heart, HelpCircle, LogOut
 import { toast } from "sonner";
 import { useState } from "react";
 import { ListingCard } from "@/components/marketplace/ListingCard";
+import { ReviewSection } from "@/components/marketplace/ReviewSection";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Мой профиль — ReFlowers" }] }),
@@ -162,6 +163,10 @@ function Profile() {
             ))}
           </div>
         )}
+
+        <h2 className="mt-8 font-display text-lg">Настройки</h2>
+
+        <ReviewSection targetUserId={user.id} />
 
         <h2 className="mt-8 font-display text-lg">Настройки</h2>
         <div className="mt-3 divide-y divide-border rounded-3xl bg-card shadow-[var(--shadow-card)]">
