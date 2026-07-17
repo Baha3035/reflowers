@@ -6,8 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteUserAsAdmin, getUserEmails, getUserStats } from "@/lib/admin.functions";
 import { adminCancelDeal } from "@/lib/deals.functions";
-import { useEffect } from "react";
-import { ShieldCheck, Users, Package, ShoppingBag, Store, Trash2, User as UserIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShieldCheck, Users, Package, ShoppingBag, Store, Trash2, User as UserIcon, TrendingUp, ChevronDown, ChevronUp, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
