@@ -60,15 +60,19 @@ export const getUserStats = createServerFn({ method: "GET" })
       if (l.status === "sold") s.listings_sold++;
     }
 
-    const { data: orders } = await supabaseAdmin.from("orders").select("buyer_id, seller_id, price, status");
+    // Count only completed deals in revenue/spend
+    const { data: orders } = await supabaseAdmin
+      .from("orders")
+      .select("buyer_id, seller_id, price, final_price, deal_status");
     for (const o of orders ?? []) {
-      if (o.status === "cancelled") continue;
+      if (o.deal_status !== "completed") continue;
+      const amount = (o.final_price ?? o.price) ?? 0;
       const seller = bump(o.seller_id);
       seller.sales_count++;
-      seller.sales_revenue += o.price ?? 0;
+      seller.sales_revenue += amount;
       const buyer = bump(o.buyer_id);
       buyer.purchases_count++;
-      buyer.purchases_spent += o.price ?? 0;
+      buyer.purchases_spent += amount;
     }
 
     return stats;
