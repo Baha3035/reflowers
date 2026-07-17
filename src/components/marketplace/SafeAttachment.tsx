@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Download, FileText, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const IMAGE_EXT_RE = /\.(avif|gif|jpe?g|png|webp)(?:$|[?#])/i;
@@ -69,6 +70,8 @@ export function ReceiptPreview({
     setDownloading(true);
     try {
       await downloadUrl(url, title);
+    } catch {
+      toast.error("Не удалось скачать чек");
     } finally {
       setDownloading(false);
     }
@@ -122,6 +125,8 @@ function FileAttachment({ url, label }: { url: string; label: string }) {
     setDownloading(true);
     try {
       await downloadUrl(url, label);
+    } catch {
+      toast.error("Не удалось скачать файл");
     } finally {
       setDownloading(false);
     }
