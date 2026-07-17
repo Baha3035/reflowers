@@ -259,9 +259,20 @@ export const adminCancelDeal = createServerFn({ method: "POST" })
   .inputValidator((d: { order_id: string; reason: string }) => d)
   .handler(async ({ data, context }) => {
     const ctx = context as Ctx;
-    const { error } = await ctx.supabase.rpc("admin_cancel_deal", {
+    // Verify admin using the caller's RLS-scoped client
+    const { data: role } = await ctx.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", ctx.userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!role) throw new Error("Только администратор");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.rpc("admin_cancel_deal", {
       _order_id: data.order_id,
       _reason: data.reason,
+      _actor: ctx.userId,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
