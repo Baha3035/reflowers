@@ -103,8 +103,6 @@ function Sell() {
   ];
   const boostTotal = BOOSTS.filter(b => boosts[b.id]).reduce((s, b) => s + b.price, 0);
   const numPrice = Number(price) || 0;
-  const commission = Math.round(numPrice * 0.07);
-  const sellerGets = Math.max(0, numPrice - commission);
 
   const publish = async () => {
     if (!user) {
@@ -114,7 +112,7 @@ function Sell() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("listings").insert({
+      const { data: inserted, error } = await supabase.from("listings").insert({
         seller_id: user.id,
         title: title || "Свежий букет",
         description: desc || null,
@@ -126,13 +124,17 @@ function Sell() {
         images: photos,
         urgent: !!boosts.urgent,
         status: "active",
-      });
+      }).select("id").single();
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["db-listings"] });
-      toast.success(boostTotal > 0
-        ? `Опубликовано с продвижением (+${boostTotal} сом).`
-        : "Объявление опубликовано!");
-      setTimeout(() => navigate({ to: "/catalog" }), 500);
+      const selectedIds = BOOSTS.filter(b => boosts[b.id]).map(b => b.id).join(",");
+      if (selectedIds && inserted?.id) {
+        toast.success("Объявление опубликовано. Оплатите продвижение.");
+        navigate({ to: "/boost-checkout", search: { listing: inserted.id, kinds: selectedIds } });
+      } else {
+        toast.success("Объявление опубликовано!");
+        setTimeout(() => navigate({ to: "/catalog" }), 500);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось опубликовать");
     } finally {
