@@ -84,6 +84,7 @@ function BoostCheckout() {
         kind: b.kind,
         price: b.price,
         expires_at: new Date(now + b.hours * 3600_000).toISOString(),
+        receipt_url: receipt,
       }));
       const { error: be } = await supabase.from("listing_boosts").insert(rows);
       if (be) throw be;
