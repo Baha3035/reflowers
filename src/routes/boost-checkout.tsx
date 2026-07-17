@@ -58,9 +58,10 @@ function BoostCheckout() {
     try {
       const ext = f.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/boost/${listing}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("chat-photos").upload(path, f, { contentType: f.type, upsert: false });
+      const { error } = await supabase.storage.from("payment-receipts").upload(path, f, { contentType: f.type, upsert: false });
       if (error) throw error;
-      const { data } = await supabase.storage.from("chat-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+      const { data, error: se } = await supabase.storage.from("payment-receipts").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (se) throw se;
       setReceipt(data?.signedUrl ?? null);
       toast.success("Чек прикреплён");
     } catch (e) {
