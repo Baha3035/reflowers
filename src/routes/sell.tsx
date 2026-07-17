@@ -283,10 +283,9 @@ function Sell() {
           <div className="rounded-2xl border border-border bg-background p-3 text-[12px]">
             <div className="mb-1 text-xs font-semibold text-foreground">Сколько вы получите</div>
             <div className="flex justify-between text-muted-foreground"><span>Цена букета</span><span className="text-foreground">{numPrice} сом</span></div>
-            <div className="flex justify-between text-muted-foreground"><span>Комиссия платформы (7%)</span><span>−{commission} сом</span></div>
-            {boostTotal > 0 && <div className="flex justify-between text-muted-foreground"><span>Продвижение</span><span>−{boostTotal} сом</span></div>}
-            <div className="mt-1.5 flex justify-between border-t border-border pt-1.5 font-semibold text-foreground"><span>На карту после продажи</span><span className="text-primary">{Math.max(0, sellerGets - boostTotal)} сом</span></div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Деньги придут после подтверждения получения букета покупателем.</div>
+            {boostTotal > 0 && <div className="flex justify-between text-muted-foreground"><span>Продвижение</span><span>+{boostTotal} сом (оплачивается отдельно)</span></div>}
+            <div className="mt-1.5 flex justify-between border-t border-border pt-1.5 font-semibold text-foreground"><span>На карту после продажи</span><span className="text-primary">{numPrice} сом</span></div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Без комиссии. Деньги — напрямую от покупателя после получения букета.</div>
           </div>
 
           <div className="rounded-2xl bg-accent p-2.5 text-[11px] text-accent-foreground">
