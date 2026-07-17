@@ -103,8 +103,6 @@ function Sell() {
   ];
   const boostTotal = BOOSTS.filter(b => boosts[b.id]).reduce((s, b) => s + b.price, 0);
   const numPrice = Number(price) || 0;
-  const commission = Math.round(numPrice * 0.07);
-  const sellerGets = Math.max(0, numPrice - commission);
 
   const publish = async () => {
     if (!user) {
@@ -114,7 +112,7 @@ function Sell() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.from("listings").insert({
+      const { data: inserted, error } = await supabase.from("listings").insert({
         seller_id: user.id,
         title: title || "Свежий букет",
         description: desc || null,
@@ -126,13 +124,17 @@ function Sell() {
         images: photos,
         urgent: !!boosts.urgent,
         status: "active",
-      });
+      }).select("id").single();
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["db-listings"] });
-      toast.success(boostTotal > 0
-        ? `Опубликовано с продвижением (+${boostTotal} сом).`
-        : "Объявление опубликовано!");
-      setTimeout(() => navigate({ to: "/catalog" }), 500);
+      const selectedIds = BOOSTS.filter(b => boosts[b.id]).map(b => b.id).join(",");
+      if (selectedIds && inserted?.id) {
+        toast.success("Объявление опубликовано. Оплатите продвижение.");
+        navigate({ to: "/boost-checkout", search: { listing: inserted.id, kinds: selectedIds } });
+      } else {
+        toast.success("Объявление опубликовано!");
+        setTimeout(() => navigate({ to: "/catalog" }), 500);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Не удалось опубликовать");
     } finally {
@@ -281,10 +283,9 @@ function Sell() {
           <div className="rounded-2xl border border-border bg-background p-3 text-[12px]">
             <div className="mb-1 text-xs font-semibold text-foreground">Сколько вы получите</div>
             <div className="flex justify-between text-muted-foreground"><span>Цена букета</span><span className="text-foreground">{numPrice} сом</span></div>
-            <div className="flex justify-between text-muted-foreground"><span>Комиссия платформы (7%)</span><span>−{commission} сом</span></div>
-            {boostTotal > 0 && <div className="flex justify-between text-muted-foreground"><span>Продвижение</span><span>−{boostTotal} сом</span></div>}
-            <div className="mt-1.5 flex justify-between border-t border-border pt-1.5 font-semibold text-foreground"><span>На карту после продажи</span><span className="text-primary">{Math.max(0, sellerGets - boostTotal)} сом</span></div>
-            <div className="mt-1 text-[11px] text-muted-foreground">Деньги придут после подтверждения получения букета покупателем.</div>
+            {boostTotal > 0 && <div className="flex justify-between text-muted-foreground"><span>Продвижение</span><span>+{boostTotal} сом (оплачивается отдельно)</span></div>}
+            <div className="mt-1.5 flex justify-between border-t border-border pt-1.5 font-semibold text-foreground"><span>На карту после продажи</span><span className="text-primary">{numPrice} сом</span></div>
+            <div className="mt-1 text-[11px] text-muted-foreground">Без комиссии. Деньги — напрямую от покупателя после получения букета.</div>
           </div>
 
           <div className="rounded-2xl bg-accent p-2.5 text-[11px] text-accent-foreground">

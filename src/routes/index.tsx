@@ -23,28 +23,28 @@ function Home() {
   return (
     <AppLayout>
       {/* Hero */}
-      <section className="relative mx-auto max-w-7xl px-4 pt-4 md:px-8 md:pt-8">
-        <div className="relative overflow-hidden rounded-[28px] md:rounded-[36px]" style={{ background: "var(--gradient-hero)" }}>
-          <div className="grid gap-6 p-6 md:grid-cols-2 md:items-center md:gap-8 md:p-12">
+      <section className="relative mx-auto max-w-7xl px-4 pt-3 md:px-8 md:pt-8">
+        <div className="relative overflow-hidden rounded-2xl md:rounded-[36px]" style={{ background: "var(--gradient-hero)" }}>
+          <div className="grid gap-6 p-4 md:grid-cols-2 md:items-center md:gap-8 md:p-12">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/70 px-3 py-1 text-xs font-medium text-foreground/70 backdrop-blur">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-background/70 px-2.5 py-0.5 text-[11px] font-medium text-foreground/70 backdrop-blur md:px-3 md:py-1 md:text-xs">
                 <Sparkles className="h-3 w-3 text-primary" /> {t("hero.badge")}
               </span>
-              <h1 className="mt-3 font-display text-3xl leading-[1.05] text-foreground md:text-5xl">
+              <h1 className="mt-2 font-display text-2xl leading-[1.05] text-foreground md:mt-3 md:text-5xl">
                 {t("hero.title1")}<br />
                 <span className="italic text-primary">{t("hero.title2")}</span>
               </h1>
-              <p className="mt-3 max-w-md text-sm text-foreground/70 md:text-base">{t("hero.desc")}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Link to="/catalog"><Button size="lg" className="rounded-full">{t("hero.find")} <ArrowRight className="h-4 w-4" /></Button></Link>
-                <Link to="/sell"><Button size="lg" variant="secondary" className="rounded-full">{t("hero.sellFlowers")}</Button></Link>
+              <p className="mt-2 max-w-md text-[13px] text-foreground/70 md:mt-3 md:text-base">{t("hero.desc")}</p>
+              <div className="mt-3 flex flex-wrap gap-2 md:mt-5">
+                <Link to="/catalog"><Button size="default" className="rounded-full md:h-11 md:px-6">{t("hero.find")} <ArrowRight className="h-4 w-4" /></Button></Link>
+                <Link to="/sell"><Button size="default" variant="secondary" className="rounded-full md:h-11 md:px-6">{t("hero.sellFlowers")}</Button></Link>
               </div>
-              <div className="mt-5 flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground md:mt-5">
                 <div><b className="text-foreground">1200+</b> {t("hero.stat1")}</div>
                 <div><b className="text-foreground">5</b> {t("hero.stat2")}</div>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative hidden md:block">
               <img src={IMAGES.heroPeonies} alt="Букет пионов" width={1600} height={1200} className="aspect-[4/3] w-full rounded-3xl object-cover shadow-[var(--shadow-soft)]" />
               <div className="absolute -bottom-3 -left-3 rounded-2xl bg-card px-3 py-2 text-xs shadow-[var(--shadow-soft)] md:-bottom-4 md:-left-4">
                 <div className="text-[10px] text-muted-foreground">Сегодня в 11:00</div>

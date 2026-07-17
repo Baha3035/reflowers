@@ -32,8 +32,6 @@ function Checkout() {
   const [gift, setGift] = useState("");
   const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const commission = Math.round(listing.price * 0.07);
-  const sellerGets = listing.price - commission;
   const total = listing.price;
 
   const isUuid = /^[0-9a-f]{8}-/.test(listing.id);
@@ -149,9 +147,8 @@ function Checkout() {
             </div>
             <div className="mt-3 rounded-2xl bg-secondary/60 p-3 text-[11px] leading-relaxed text-muted-foreground">
               <div className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold text-foreground"><ShieldCheck className="h-3 w-3 text-primary" /> Безопасная сделка</div>
-              <div className="flex justify-between"><span>Комиссия платформы (7%)</span><span>{formatSom(commission)}</span></div>
-              <div className="flex justify-between"><span>Продавец получит</span><span className="text-foreground">{formatSom(sellerGets)}</span></div>
-              <div className="mt-1.5">Деньги придут продавцу после подтверждения получения букета.</div>
+              <div className="flex justify-between"><span>Продавец получит</span><span className="text-foreground">{formatSom(listing.price)}</span></div>
+              <div className="mt-1.5">Без комиссии. Деньги придут продавцу после подтверждения получения букета.</div>
             </div>
             <Button size="lg" className="mt-4 w-full rounded-full" onClick={submit} disabled={submitting}>
               {submitting ? "…" : "Оформить заказ"}
