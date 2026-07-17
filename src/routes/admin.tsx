@@ -174,6 +174,21 @@ function AdminPage() {
     return st && st !== "completed" && st !== "cancelled";
   }).length;
 
+  const boostKindLabel: Record<string, string> = {
+    bump: "Поднять", highlight: "Выделить цветом", top: "В топ", urgent: "Успейте купить сегодня",
+  };
+  const boostRows = boosts.data ?? [];
+  const boostRevenue = boostRows.reduce((s, b) => s + (b.price ?? 0), 0);
+  const listingsById = new Map((listings.data ?? []).map(l => [l.id, l]));
+
+  const profilesAll = profiles.data ?? [];
+  const ordersAll = orders.data ?? [];
+  const boostsAll = boostRows;
+  const SHORT = 5;
+  const profilesShown = showAllUsers ? profilesAll : profilesAll.slice(0, SHORT);
+  const ordersShown = showAllOrders ? ordersAll : ordersAll.slice(0, SHORT);
+  const boostsShown = showAllBoosts ? boostsAll : boostsAll.slice(0, SHORT);
+
   return (
     <AppLayout>
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-8">
