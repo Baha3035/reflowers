@@ -115,6 +115,26 @@ function AdminPage() {
     },
   });
 
+  const boosts = useQuery({
+    queryKey: ["admin-boosts"],
+    enabled: !!isAdmin,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("listing_boosts")
+        .select("id, listing_id, user_id, kind, price, expires_at, created_at, receipt_url")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      return (data ?? []) as Array<{
+        id: string; listing_id: string; user_id: string; kind: string;
+        price: number; expires_at: string; created_at: string; receipt_url: string | null;
+      }>;
+    },
+  });
+
+  const [showAllUsers, setShowAllUsers] = useState(false);
+  const [showAllOrders, setShowAllOrders] = useState(false);
+  const [showAllBoosts, setShowAllBoosts] = useState(false);
+
   const cancelDealFn = useServerFn(adminCancelDeal);
   const cancelDealMutation = useMutation({
     mutationFn: (v: { order_id: string; reason: string }) => cancelDealFn({ data: v }),
