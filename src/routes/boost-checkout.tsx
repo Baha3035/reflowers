@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, TrendingUp, Palette, Crown, Flame, Loader2, Copy, Check } from "lucide-react";
+import { ReceiptPreview } from "@/components/marketplace/SafeAttachment";
 
 type BoostKind = "bump" | "highlight" | "top" | "urgent";
 
@@ -52,7 +53,8 @@ function BoostCheckout() {
 
   async function uploadReceipt(f: File) {
     if (!user) { toast.info("Войдите"); return; }
-    if (!f.type.startsWith("image/")) { toast.error("Нужно изображение чека"); return; }
+    const allowed = f.type.startsWith("image/") || f.type === "application/pdf" || /\.(pdf|png|jpe?g|webp|gif|heic)$/i.test(f.name);
+    if (!allowed) { toast.error("Загрузите фото чека или PDF"); return; }
     if (f.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
     setUploading(true);
     try {
@@ -117,8 +119,8 @@ function BoostCheckout() {
   };
 
   return (
-    <AppLayout>
-      <div className="mx-auto max-w-xl px-4 py-6 md:px-8">
+    <AppLayout hideBottomNav>
+      <div className="mx-auto max-w-xl px-4 py-6 pb-safe md:px-8">
         <h1 className="font-display text-2xl md:text-3xl">Оплата продвижения</h1>
         <p className="mt-1 text-sm text-muted-foreground">Услуги активируются сразу после оплаты.</p>
 
@@ -181,7 +183,7 @@ function BoostCheckout() {
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,application/pdf"
                 hidden
                 onChange={e => { const f = e.target.files?.[0]; if (f) uploadReceipt(f); }}
               />
@@ -195,16 +197,9 @@ function BoostCheckout() {
                 >
                   {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : receipt ? "Заменить чек" : "Прикрепить чек"}
                 </Button>
-                {receipt && (
-                  <a href={receipt} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-                    Просмотреть
-                  </a>
-                )}
               </div>
               {receipt ? (
-                <a href={receipt} target="_blank" rel="noreferrer" className="mt-2 block">
-                  <img src={receipt} alt="Чек" className="max-h-40 rounded-xl border border-border object-cover" />
-                </a>
+                <ReceiptPreview url={receipt} title="Чек прикреплён" className="mt-2" />
               ) : (
                 <div className="mt-1.5 text-[11px] text-muted-foreground">
                   Переведите сумму на указанные реквизиты и приложите скриншот/фото чека. Продвижение активируется после получения чека.

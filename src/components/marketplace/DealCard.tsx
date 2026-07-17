@@ -6,6 +6,7 @@ import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Loader2, MoreHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
+import { ReceiptPreview } from "@/components/marketplace/SafeAttachment";
 import {
   sellerRespond,
   sellerSetTerms,
@@ -276,15 +277,13 @@ export function DealCard({ conversationId }: { conversationId: string }) {
       )}
 
       {s === "awaiting_payment" && isSeller && latestReceipt && (
-        <div className="mt-1.5 flex items-center gap-2 rounded-lg bg-muted px-2 py-1.5 text-xs">
-          <a href={latestReceipt.url} target="_blank" rel="noreferrer" className="shrink-0">
-            <img src={latestReceipt.url} alt="Чек" className="h-12 w-12 rounded object-cover" />
-          </a>
-          <div className="min-w-0">
-            <div className="text-muted-foreground">Чек от покупателя{latestReceipt.amount ? ` · ${fmtSom(latestReceipt.amount)}` : ""}</div>
-            <a href={latestReceipt.url} target="_blank" rel="noreferrer" className="text-primary underline">Открыть чек</a>
-          </div>
-        </div>
+        <ReceiptPreview
+          url={latestReceipt.url}
+          title="Чек от покупателя"
+          subtitle={latestReceipt.amount ? fmtSom(latestReceipt.amount) : undefined}
+          className="mt-1.5 bg-muted"
+          compact
+        />
       )}
 
       {s === "completed" && (
@@ -479,6 +478,8 @@ function PrepaymentModal({
 
   async function upload(f: File) {
     if (!user) return;
+    const allowed = f.type.startsWith("image/") || f.type === "application/pdf" || /\.(pdf|png|jpe?g|webp|gif|heic)$/i.test(f.name);
+    if (!allowed) { toast.error("Загрузите фото чека или PDF"); return; }
     if (f.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
     setUploading(true);
     try {
@@ -502,13 +503,13 @@ function PrepaymentModal({
         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="input" />
       </Field>
       <Field label="Чек об оплате (обязательно)">
-        <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); }} />
+        <input ref={fileRef} type="file" accept="image/*,application/pdf" hidden onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); }} />
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
             {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : receipt ? "Заменить чек" : "Прикрепить чек"}
           </Button>
-          {receipt && <a href={receipt} target="_blank" rel="noreferrer" className="text-[12px] text-primary underline">Просмотр</a>}
         </div>
+        {receipt && <ReceiptPreview url={receipt} title="Чек прикреплён" className="mt-2" compact />}
         {!receipt && <div className="mt-1 text-[11px] text-muted-foreground">Без чека кнопка «Отправить» будет недоступна.</div>}
       </Field>
       <div className="mt-3 flex justify-end gap-2">
