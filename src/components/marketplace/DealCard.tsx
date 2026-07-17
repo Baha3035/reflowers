@@ -458,7 +458,7 @@ function TermsModal({
 
 function PrepaymentModal({
   orderId, suggested, busy, onClose, onSubmit,
-}: { orderId: string; suggested: number; busy: boolean; onClose: () => void; onSubmit: (v: { amount: number; receipt_url?: string | null }) => Promise<void> }) {
+}: { orderId: string; suggested: number; busy: boolean; onClose: () => void; onSubmit: (v: { amount: number; receipt_url: string }) => Promise<void> }) {
   const { user } = useApp();
   const [amount, setAmount] = useState(String(suggested || 0));
   const [uploading, setUploading] = useState(false);
@@ -489,18 +489,19 @@ function PrepaymentModal({
       <Field label="Сумма (сом)">
         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="input" />
       </Field>
-      <Field label="Чек (необязательно)">
+      <Field label="Чек об оплате (обязательно)">
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); }} />
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Прикрепить"}
+            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : receipt ? "Заменить чек" : "Прикрепить чек"}
           </Button>
           {receipt && <a href={receipt} target="_blank" rel="noreferrer" className="text-[12px] text-primary underline">Просмотр</a>}
         </div>
+        {!receipt && <div className="mt-1 text-[11px] text-muted-foreground">Без чека кнопка «Отправить» будет недоступна.</div>}
       </Field>
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onClose}>Отмена</Button>
-        <Button size="sm" disabled={busy || !Number(amount)} onClick={() => onSubmit({ amount: Number(amount), receipt_url: receipt })}>
+        <Button size="sm" disabled={busy || !Number(amount) || !receipt} onClick={() => receipt && onSubmit({ amount: Number(amount), receipt_url: receipt })}>
           {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Я отправил"}
         </Button>
       </div>
