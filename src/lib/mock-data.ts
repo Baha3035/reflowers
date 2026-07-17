@@ -36,6 +36,9 @@ export interface Listing {
   description?: string;
   reason?: string;
   urgent?: boolean;
+  boostTopUntil?: string | null;
+  boostHighlightUntil?: string | null;
+  boostBumpUntil?: string | null;
 }
 
 export interface Seller {
