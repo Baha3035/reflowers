@@ -1,13 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck, TrendingUp, Palette, Crown, Flame } from "lucide-react";
+import { ShieldCheck, TrendingUp, Palette, Crown, Flame, Loader2, Copy, Check } from "lucide-react";
 
 type BoostKind = "bump" | "highlight" | "top" | "urgent";
 
@@ -30,13 +30,50 @@ function BoostCheckout() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [receipt, setReceipt] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const ids: string[] = kinds.split(",").filter(Boolean).filter((id: string) => id in BOOSTS);
   const items = ids.map((id: string) => ({ id, ...BOOSTS[id] }));
   const total = items.reduce((s: number, b: { price: number }) => s + b.price, 0);
 
+  const PLATFORM_PHONE = "+996 700 123 456";
+  const PLATFORM_BANK = "MBank / O!Деньги · ReFlowers";
+
+  const copyPhone = async () => {
+    try {
+      await navigator.clipboard.writeText(PLATFORM_PHONE);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* noop */ }
+  };
+
+  async function uploadReceipt(f: File) {
+    if (!user) { toast.info("Войдите"); return; }
+    if (!f.type.startsWith("image/")) { toast.error("Нужно изображение чека"); return; }
+    if (f.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
+    setUploading(true);
+    try {
+      const ext = f.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/boost/${listing}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("chat-photos").upload(path, f, { contentType: f.type, upsert: false });
+      if (error) throw error;
+      const { data } = await supabase.storage.from("chat-photos").createSignedUrl(path, 60 * 60 * 24 * 365);
+      setReceipt(data?.signedUrl ?? null);
+      toast.success("Чек прикреплён");
+    } catch (e) {
+      toast.error("Не удалось загрузить чек: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   const pay = async () => {
     if (!user) { toast.info("Войдите"); return; }
+    if (!receipt) { toast.error("Прикрепите чек об оплате"); return; }
     setPaying(true);
     try {
       const now = Date.now();
@@ -68,7 +105,7 @@ function BoostCheckout() {
         await supabase.from("listings").update(patch).eq("id", listing);
       }
       await qc.invalidateQueries({ queryKey: ["db-listings"] });
-      toast.success("Продвижение оплачено и активировано!");
+      toast.success("Чек получен — продвижение активировано!");
       setTimeout(() => navigate({ to: "/catalog" }), 500);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не удалось оплатить");
@@ -106,13 +143,81 @@ function BoostCheckout() {
             <span className="font-display text-2xl font-semibold text-primary">{total} сом</span>
           </div>
 
+          {items.length > 0 && (
+            <div className="mt-3 rounded-2xl border border-border bg-secondary/40 p-3">
+              <div className="text-xs font-medium text-foreground/80">Реквизиты для оплаты</div>
+              <div className="mt-2 space-y-1.5 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-muted-foreground">Телефон / номер счёта</div>
+                    <div className="truncate font-medium">{PLATFORM_PHONE}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyPhone}
+                    className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border bg-background text-muted-foreground hover:text-primary"
+                    aria-label="Скопировать"
+                  >
+                    {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+                <div>
+                  <div className="text-[11px] text-muted-foreground">Способ</div>
+                  <div className="font-medium">{PLATFORM_BANK}</div>
+                </div>
+                <div>
+                  <div className="text-[11px] text-muted-foreground">Комментарий к переводу</div>
+                  <div className="font-medium">Продвижение · {listing.slice(0, 8)}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {items.length > 0 && (
+            <div className="mt-3 rounded-2xl border border-border p-3">
+              <div className="text-xs font-medium text-foreground/80">Чек об оплате (обязательно)</div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={e => { const f = e.target.files?.[0]; if (f) uploadReceipt(f); }}
+              />
+              <div className="mt-2 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                >
+                  {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : receipt ? "Заменить чек" : "Прикрепить чек"}
+                </Button>
+                {receipt && (
+                  <a href={receipt} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                    Просмотреть
+                  </a>
+                )}
+              </div>
+              {receipt ? (
+                <a href={receipt} target="_blank" rel="noreferrer" className="mt-2 block">
+                  <img src={receipt} alt="Чек" className="max-h-40 rounded-xl border border-border object-cover" />
+                </a>
+              ) : (
+                <div className="mt-1.5 text-[11px] text-muted-foreground">
+                  Переведите сумму на указанные реквизиты и приложите скриншот/фото чека. Продвижение активируется после получения чека.
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mt-2 flex items-start gap-1.5 rounded-2xl bg-secondary/60 p-2.5 text-[11px] text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
             <span>ReFlowers берёт оплату только за продвижение объявлений. С самой продажи букета мы не удерживаем комиссию.</span>
           </div>
 
-          <Button size="lg" className="mt-3 w-full rounded-full" onClick={pay} disabled={paying || items.length === 0 || total === 0}>
-            {paying ? "…" : `Оплатить ${total} сом`}
+          <Button size="lg" className="mt-3 w-full rounded-full" onClick={pay} disabled={paying || items.length === 0 || total === 0 || !receipt || uploading}>
+            {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : receipt ? `Активировать за ${total} сом` : "Прикрепите чек"}
           </Button>
           <Link to="/catalog" className="mt-2 block text-center text-xs text-muted-foreground hover:underline">
             Пропустить — опубликовать без продвижения

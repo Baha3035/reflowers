@@ -417,7 +417,6 @@ function TermsModal({
   const [delivery, setDelivery] = useState(String(initial.delivery_cost ?? 0));
   const [method, setMethod] = useState(initial.payment_method ?? "MBank");
   const [details, setDetails] = useState(initial.payment_details ?? "");
-  const [deadline, setDeadline] = useState("");
 
   const applyPct = (pct: number) => {
     const base = Number(finalPrice) || 0;
@@ -452,9 +451,6 @@ function TermsModal({
       <Field label="Реквизиты (телефон или счёт)">
         <textarea value={details} onChange={e => setDetails(e.target.value)} className="input min-h-[70px]" placeholder="+996 XXX XXX XXX · MBank" />
       </Field>
-      <Field label="Срок предоплаты">
-        <input type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} className="input" />
-      </Field>
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onClose}>Отмена</Button>
         <Button size="sm" disabled={busy || !details.trim()} onClick={() => onSubmit({
@@ -463,7 +459,7 @@ function TermsModal({
           delivery_cost: Number(delivery) || 0,
           payment_method: method.trim(),
           payment_details: details.trim(),
-          prepayment_deadline: deadline ? new Date(deadline).toISOString() : null,
+          prepayment_deadline: null,
         })}>
           {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Отправить условия"}
         </Button>

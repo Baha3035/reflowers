@@ -284,7 +284,7 @@ function ConversationPage() {
             "Есть ещё фото?",
           ];
           return (
-            <div className="mt-2 -mx-2 flex gap-1.5 overflow-x-auto px-2 pb-1">
+            <div className="mt-2 flex flex-wrap gap-1.5 pb-1">
               {quickReplies.map(q => (
                 <button
                   key={q}
