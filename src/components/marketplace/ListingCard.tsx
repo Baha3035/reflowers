@@ -3,13 +3,54 @@ import { Heart, MapPin, Clock, Star, BadgeCheck, Zap } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { formatSom, type Listing, getSeller } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
+import { createDeal } from "@/lib/deals.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export function ListingCard({ listing, compact = false, horizontal = false }: { listing: Listing; compact?: boolean; horizontal?: boolean }) {
-  const { favorites, toggleFavorite } = useApp();
+  const { favorites, toggleFavorite, user } = useApp();
   const fav = favorites.has(listing.id);
   const seller = getSeller(listing.sellerId);
   const discount = listing.oldPrice ? Math.round((1 - listing.price / listing.oldPrice) * 100) : 0;
   const navigate = useNavigate();
+  const createDealFn = useServerFn(createDeal);
+  const [buying, setBuying] = useState(false);
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.id);
+
+  async function handleBuy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user) { navigate({ to: "/auth" }); return; }
+    if (!isUuid) {
+      // Demo listing — fall back to legacy checkout flow
+      navigate({ to: "/checkout", search: { id: listing.id } });
+      return;
+    }
+    if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
+    setBuying(true);
+    try {
+      // Reuse conversation if exists, otherwise createDeal will make one
+      const { data: existing } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("listing_id", listing.id)
+        .eq("buyer_id", user.id)
+        .eq("seller_id", listing.sellerId)
+        .maybeSingle();
+      const res = await createDealFn({ data: { listing_id: listing.id } });
+      const convId = res.conversation_id ?? existing?.id;
+      if (convId) {
+        toast.success("Заявка отправлена продавцу");
+        navigate({ to: "/conversation/$id", params: { id: convId } });
+      }
+    } catch (err) {
+      toast.error("Не удалось создать сделку: " + (err as Error).message);
+    } finally {
+      setBuying(false);
+    }
+  }
 
   if (horizontal) {
     return (
@@ -41,7 +82,8 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
               <Heart className={cn("h-3.5 w-3.5", fav ? "fill-destructive text-destructive" : "text-foreground/70")} />
             </button>
             <button
-              onClick={(e) => { e.preventDefault(); navigate({ to: "/checkout", search: { id: listing.id } }); }}
+              onClick={handleBuy}
+              disabled={buying}
               className="inline-flex items-center gap-0.5 rounded-full bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground shadow-sm"
             >
               <Zap className="h-3 w-3" />
@@ -77,11 +119,12 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
             <Heart className={cn("h-4 w-4", fav ? "fill-destructive text-destructive" : "text-foreground/70")} />
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); navigate({ to: "/checkout", search: { id: listing.id } }); }}
+            onClick={handleBuy}
+            disabled={buying}
             aria-label="Купить в 1 клик"
             className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-md transition hover:scale-105"
           >
-            <Zap className="h-3 w-3" /> Купить
+            <Zap className="h-3 w-3" /> {buying ? "…" : "Купить"}
           </button>
           {listing.hoursLeft && listing.hoursLeft <= 6 && (
             <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
