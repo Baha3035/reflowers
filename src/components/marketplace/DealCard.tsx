@@ -419,6 +419,11 @@ function TermsModal({
   const [details, setDetails] = useState(initial.payment_details ?? "");
   const [deadline, setDeadline] = useState("");
 
+  const applyPct = (pct: number) => {
+    const base = Number(finalPrice) || 0;
+    setPrepay(String(Math.round((base * pct) / 100)));
+  };
+
   return (
     <ModalShell title="Условия сделки" onClose={onClose}>
       <div className="rounded-xl border border-amber-300 bg-amber-50 p-2 text-[12px] text-amber-900">
@@ -426,7 +431,21 @@ function TermsModal({
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
         <Field label="Итоговая цена (сом)"><input type="number" value={finalPrice} onChange={e => setFinalPrice(e.target.value)} className="input" /></Field>
-        <Field label="Предоплата (сом)"><input type="number" value={prepay} onChange={e => setPrepay(e.target.value)} className="input" /></Field>
+        <Field label="Предоплата (сом)">
+          <input type="number" value={prepay} onChange={e => setPrepay(e.target.value)} className="input" />
+          <div className="mt-1 flex flex-wrap gap-1">
+            {[0, 15, 20, 50, 100].map(pct => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => applyPct(pct)}
+                className="rounded-full border border-border bg-background px-2 py-0.5 text-[11px] text-foreground/70 hover:border-primary hover:text-primary"
+              >
+                {pct}%
+              </button>
+            ))}
+          </div>
+        </Field>
         <Field label="Доставка (сом)"><input type="number" value={delivery} onChange={e => setDelivery(e.target.value)} className="input" /></Field>
         <Field label="Способ оплаты"><input value={method} onChange={e => setMethod(e.target.value)} className="input" placeholder="MBank / O!Деньги / наличные" /></Field>
       </div>
