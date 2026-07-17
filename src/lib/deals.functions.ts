@@ -150,14 +150,19 @@ export const sellerSetTerms = createServerFn({ method: "POST" })
 
 export const buyerSentPrepayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { order_id: string; amount: number; receipt_url?: string | null }) => d)
+  .inputValidator((d: { order_id: string; amount: number; receipt_url: string }) => {
+    if (!d?.receipt_url || !/^https?:\/\//.test(d.receipt_url)) {
+      throw new Error("Прикрепите чек об оплате");
+    }
+    return d;
+  })
   .handler(async ({ data, context }) => {
     const ctx = context as Ctx;
     const o = await loadOrder(ctx, data.order_id);
     if (o.buyer_id !== ctx.userId) throw new Error("Только покупатель");
     await logEvent(ctx, data.order_id, "buyer_sent_prepayment", {
       amount: data.amount,
-      receipt_url: data.receipt_url ?? null,
+      receipt_url: data.receipt_url,
     });
     return { ok: true };
   });
@@ -246,5 +251,18 @@ export const reportProblem = createServerFn({ method: "POST" })
       reason: data.reason,
       details: data.details ?? null,
     });
+    return { ok: true };
+  });
+
+export const adminCancelDeal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { order_id: string; reason: string }) => d)
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    const { error } = await ctx.supabase.rpc("admin_cancel_deal", {
+      _order_id: data.order_id,
+      _reason: data.reason,
+    });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

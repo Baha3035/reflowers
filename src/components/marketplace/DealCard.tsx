@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ChevronDown, ChevronUp, Loader2, ShieldAlert, X } from "lucide-react";
+import { Loader2, MoreHorizontal, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   sellerRespond,
@@ -54,10 +54,10 @@ type Event = {
 };
 
 const STATUS_LABEL: Record<DealStatus, string> = {
-  awaiting_confirmation: "Ожидает подтверждения",
-  awaiting_payment: "Ожидает оплаты",
-  in_progress: "Заказ выполняется",
-  awaiting_completion: "Ожидает завершения",
+  awaiting_confirmation: "Ждём продавца",
+  awaiting_payment: "К оплате",
+  in_progress: "В работе",
+  awaiting_completion: "К получению",
   completed: "Завершена",
   cancelled: "Отменена",
   disputed: "Спор",
@@ -195,151 +195,145 @@ export function DealCard({ conversationId }: { conversationId: string }) {
   const canAct = s !== "completed" && s !== "cancelled";
   const isNewSeller = sellerRep.data && !sellerRep.data.verified && sellerRep.data.completed < 3;
 
+  // Primary action (single button per role/status)
+  let primary: { label: string; onClick: () => void; loading?: string } | null = null;
+  let hint: string | null = null;
+  if (s === "awaiting_confirmation" && isSeller) primary = { label: "Подтвердить", onClick: () => setShowTerms(true) };
+  else if (s === "awaiting_confirmation" && isBuyer) hint = "Ждём продавца";
+  else if (s === "awaiting_payment" && isBuyer) primary = { label: "Я оплатил", onClick: () => setShowPay(true) };
+  else if (s === "awaiting_payment" && isSeller) primary = { label: "Оплата пришла", onClick: () => wrap("confirmPre", () => confirmPayFn({ data: { order_id: order.id, ok: true } })), loading: "confirmPre" };
+  else if (s === "in_progress" && isSeller) primary = { label: "Букет готов", onClick: () => wrap("pickup", () => bouquetFn({ data: { order_id: order.id, mode: "pickup" } })), loading: "pickup" };
+  else if (s === "in_progress" && isBuyer) hint = "Букет готовится";
+  else if (s === "awaiting_completion" && isBuyer) primary = { label: "Получил букет", onClick: () => wrap("received", () => receivedFn({ data: { order_id: order.id } })), loading: "received" };
+  else if (s === "awaiting_completion" && isSeller) primary = { label: "Оплата получена", onClick: () => wrap("confirmFull", () => confirmFullFn({ data: { order_id: order.id } })), loading: "confirmFull" };
+
+  const hasTerms = order.final_price != null || order.payment_details;
+  const remainder = (order.final_price ?? 0) + (order.delivery_cost ?? 0) - (order.prepayment_amount ?? 0);
+
   return (
-    <div className="mb-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
-      <div className="flex items-center justify-between gap-2">
-        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_COLOR[s]}`}>
-          Сделка · {STATUS_LABEL[s]}
+    <div className="mb-2 rounded-xl border border-border bg-card px-3 py-2 text-sm">
+      <div className="flex items-center gap-2">
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLOR[s]}`}>
+          {STATUS_LABEL[s]}
         </span>
-        {canAct && (
-          <div className="flex gap-1">
-            <button onClick={() => setShowProblem(true)} className="rounded-full bg-muted px-2 py-1 text-[11px] hover:bg-destructive/10 hover:text-destructive inline-flex items-center gap-1">
-              <ShieldAlert className="h-3 w-3" /> Есть проблема
-            </button>
-            <button onClick={() => setShowCancel(true)} className="rounded-full bg-muted px-2 py-1 text-[11px] hover:bg-muted/80">
-              Отменить
-            </button>
-          </div>
+        {hasTerms && (
+          <span className="truncate text-xs text-muted-foreground">
+            {fmtSom(order.final_price ?? order.price)}
+            {order.prepayment_amount ? ` · пред. ${fmtSom(order.prepayment_amount)}` : ""}
+          </span>
         )}
+        <div className="ml-auto flex items-center gap-1">
+          {primary && (
+            <Button size="sm" className="h-7 rounded-full px-3 text-xs" disabled={!!busy} onClick={primary.onClick}>
+              {busy === primary.loading ? <Loader2 className="h-3 w-3 animate-spin" /> : primary.label}
+            </Button>
+          )}
+          {canAct && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setExpandedHistory(v => !v)}
+                className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+                aria-label="Ещё"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
+      {hint && <div className="mt-1 text-xs text-muted-foreground">{hint}</div>}
+
+      {s === "awaiting_payment" && order.payment_details && isBuyer && (
+        <div className="mt-1.5 rounded-lg bg-muted px-2 py-1.5 text-xs">
+          <span className="text-muted-foreground">Реквизиты: </span>
+          <span className="font-medium break-all">{order.payment_details}</span>
+        </div>
+      )}
+
+      {s === "awaiting_completion" && isBuyer && remainder > 0 && (
+        <button
+          type="button"
+          onClick={() => wrap("sentFull", () => sentFullFn({ data: { order_id: order.id } }))}
+          className="mt-1 text-xs text-primary underline underline-offset-2"
+        >
+          Отправил остаток {fmtSom(remainder)}
+        </button>
+      )}
+
+      {s === "awaiting_payment" && isSeller && (
+        <button
+          type="button"
+          onClick={() => wrap("rejectPre", () => confirmPayFn({ data: { order_id: order.id, ok: false } }))}
+          className="mt-1 text-xs text-muted-foreground underline underline-offset-2"
+        >
+          Оплата не поступила
+        </button>
+      )}
+
+      {s === "awaiting_confirmation" && isSeller && (
+        <button
+          type="button"
+          onClick={() => wrap("decline", () => respondFn({ data: { order_id: order.id, accept: false } }))}
+          className="mt-1 text-xs text-muted-foreground underline underline-offset-2"
+        >
+          Отклонить заказ
+        </button>
+      )}
+
+      {s === "completed" && (
+        <div className="mt-1 text-xs text-emerald-700">Сделка завершена — оставьте отзыв ниже</div>
+      )}
       {s === "cancelled" && order.cancel_reason && (
-        <div className="mt-2 text-xs text-muted-foreground">Причина отмены: {order.cancel_reason}</div>
-      )}
-      {s === "disputed" && order.dispute_reason && (
-        <div className="mt-2 text-xs text-red-700">Спор: {order.dispute_reason}</div>
+        <div className="mt-1 text-xs text-muted-foreground">Отменено: {order.cancel_reason}</div>
       )}
 
-      {/* Buyer-side warning for new/unverified sellers */}
-      {isBuyer && canAct && isNewSeller && (
-        <div className="mt-2 flex gap-2 rounded-xl border border-amber-300 bg-amber-50 p-2 text-[12px] text-amber-900">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-          <div>
-            Продавец пока не проверен и провёл мало сделок. Не отправляйте полную сумму заранее — договоритесь о частичной предоплате или встрече.
-          </div>
-        </div>
-      )}
-
-      {/* Terms block */}
-      {(order.final_price != null || order.payment_details) && (
-        <div className="mt-2 rounded-xl bg-muted p-2 text-[12px]">
-          <div className="grid grid-cols-2 gap-1">
-            <div>Итоговая цена: <b>{fmtSom(order.final_price ?? order.price)}</b></div>
-            <div>Предоплата: <b>{fmtSom(order.prepayment_amount)}</b></div>
-            <div>Доставка: <b>{fmtSom(order.delivery_cost)}</b></div>
-            <div>Способ: <b>{order.payment_method || "—"}</b></div>
-          </div>
-          {order.payment_details && s !== "cancelled" && (
-            <>
-              <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
-                ReFlowers не принимает и не хранит деньги. Оплата напрямую продавцу. Перед переводом проверьте рейтинг, отзывы и статус верификации.
-              </div>
-              <div className="mt-1 whitespace-pre-wrap break-words">
-                <span className="text-muted-foreground">Реквизиты: </span>
-                <b>{order.payment_details}</b>
-              </div>
-            </>
-          )}
-          {order.prepayment_deadline && (
-            <div className="mt-1 text-muted-foreground">Внести до: {new Date(order.prepayment_deadline).toLocaleString()}</div>
-          )}
-        </div>
-      )}
-
-      {/* Action buttons per status/role */}
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {s === "awaiting_confirmation" && isSeller && (
-          <>
-            <Button size="sm" onClick={() => setShowTerms(true)}>Подтвердить и указать условия</Button>
-            <Button size="sm" variant="outline" onClick={() => wrap("decline", () => respondFn({ data: { order_id: order.id, accept: false } }))}>
-              Отклонить
-            </Button>
-          </>
-        )}
-        {s === "awaiting_confirmation" && isBuyer && (
-          <span className="text-[12px] text-muted-foreground">Ждём подтверждения продавца…</span>
-        )}
-
-        {s === "awaiting_payment" && isBuyer && (
-          <Button size="sm" onClick={() => setShowPay(true)}>Я отправил предоплату</Button>
-        )}
-        {s === "awaiting_payment" && isSeller && (
-          <>
-            <Button size="sm" onClick={() => wrap("confirmPre", () => confirmPayFn({ data: { order_id: order.id, ok: true } }))}>
-              Предоплата получена
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => wrap("rejectPre", () => confirmPayFn({ data: { order_id: order.id, ok: false } }))}>
-              Оплата не поступила
-            </Button>
-          </>
-        )}
-
-        {s === "in_progress" && isSeller && (
-          <>
-            <Button size="sm" onClick={() => wrap("pickup", () => bouquetFn({ data: { order_id: order.id, mode: "pickup" } }))}>
-              Букет готов к самовывозу
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => wrap("ship", () => bouquetFn({ data: { order_id: order.id, mode: "shipped" } }))}>
-              Букет передан в доставку
-            </Button>
-          </>
-        )}
-        {s === "in_progress" && isBuyer && (
-          <span className="text-[12px] text-muted-foreground">Продавец готовит букет.</span>
-        )}
-
-        {s === "awaiting_completion" && isBuyer && (
-          <>
-            <Button size="sm" onClick={() => wrap("received", () => receivedFn({ data: { order_id: order.id } }))}>
-              Букет получен
-            </Button>
-            {order.final_price != null && order.prepayment_amount != null &&
-              order.final_price + (order.delivery_cost ?? 0) - order.prepayment_amount > 0 && (
-              <Button size="sm" variant="outline" onClick={() => wrap("sentFull", () => sentFullFn({ data: { order_id: order.id } }))}>
-                Полная сумма отправлена
-              </Button>
-            )}
-          </>
-        )}
-        {s === "awaiting_completion" && isSeller && (
-          <Button size="sm" onClick={() => wrap("confirmFull", () => confirmFullFn({ data: { order_id: order.id } }))}>
-            Полная сумма получена
-          </Button>
-        )}
-
-        {s === "completed" && (
-          <span className="text-[12px] text-emerald-700">Сделка завершена. Оставьте отзыв ниже 👇</span>
-        )}
-      </div>
-
-      {/* History */}
-      <button
-        onClick={() => setExpandedHistory(v => !v)}
-        className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-      >
-        История сделки {expandedHistory ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-      </button>
       {expandedHistory && (
-        <ul className="mt-1 space-y-0.5 border-l border-border pl-3 text-[11px] text-muted-foreground">
-          {(events.data ?? []).map(e => (
-            <li key={e.id}>
-              <span className="text-foreground/80">{EVENT_LABEL[e.event_type] ?? e.event_type}</span>
-              {" · "}
-              {new Date(e.created_at).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-            </li>
-          ))}
-          {(events.data ?? []).length === 0 && <li>Пока пусто</li>}
-        </ul>
+        <div className="mt-2 border-t border-border pt-2">
+          {isBuyer && canAct && isNewSeller && (
+            <div className="mb-2 rounded-lg bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900">
+              Продавец пока не проверен. Не отправляйте всю сумму заранее.
+            </div>
+          )}
+          {hasTerms && (
+            <div className="mb-2 grid grid-cols-2 gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+              <div>Цена: <b className="text-foreground">{fmtSom(order.final_price ?? order.price)}</b></div>
+              <div>Предоплата: <b className="text-foreground">{fmtSom(order.prepayment_amount)}</b></div>
+              <div>Доставка: <b className="text-foreground">{fmtSom(order.delivery_cost)}</b></div>
+              <div>Способ: <b className="text-foreground">{order.payment_method || "—"}</b></div>
+            </div>
+          )}
+          <ul className="space-y-0.5 text-[11px] text-muted-foreground">
+            {(events.data ?? []).map(e => (
+              <li key={e.id}>
+                {EVENT_LABEL[e.event_type] ?? e.event_type}
+                {" · "}
+                {new Date(e.created_at).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+              </li>
+            ))}
+          </ul>
+          {canAct && (
+            <div className="mt-2 flex gap-3 text-[11px]">
+              <button onClick={() => setShowProblem(true)} className="text-destructive underline underline-offset-2">Есть проблема</button>
+              <button onClick={() => setShowCancel(true)} className="text-muted-foreground underline underline-offset-2">Отменить сделку</button>
+            </div>
+          )}
+          <button
+            onClick={() => setExpandedHistory(false)}
+            className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            Свернуть <ChevronUp className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+      {!expandedHistory && canAct && (
+        <button
+          onClick={() => setExpandedHistory(true)}
+          className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          Подробнее <ChevronDown className="h-3 w-3" />
+        </button>
       )}
 
       {/* Modals */}
@@ -464,7 +458,7 @@ function TermsModal({
 
 function PrepaymentModal({
   orderId, suggested, busy, onClose, onSubmit,
-}: { orderId: string; suggested: number; busy: boolean; onClose: () => void; onSubmit: (v: { amount: number; receipt_url?: string | null }) => Promise<void> }) {
+}: { orderId: string; suggested: number; busy: boolean; onClose: () => void; onSubmit: (v: { amount: number; receipt_url: string }) => Promise<void> }) {
   const { user } = useApp();
   const [amount, setAmount] = useState(String(suggested || 0));
   const [uploading, setUploading] = useState(false);
@@ -495,18 +489,19 @@ function PrepaymentModal({
       <Field label="Сумма (сом)">
         <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="input" />
       </Field>
-      <Field label="Чек (необязательно)">
+      <Field label="Чек об оплате (обязательно)">
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); }} />
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : "Прикрепить"}
+            {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : receipt ? "Заменить чек" : "Прикрепить чек"}
           </Button>
           {receipt && <a href={receipt} target="_blank" rel="noreferrer" className="text-[12px] text-primary underline">Просмотр</a>}
         </div>
+        {!receipt && <div className="mt-1 text-[11px] text-muted-foreground">Без чека кнопка «Отправить» будет недоступна.</div>}
       </Field>
       <div className="mt-3 flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onClose}>Отмена</Button>
-        <Button size="sm" disabled={busy || !Number(amount)} onClick={() => onSubmit({ amount: Number(amount), receipt_url: receipt })}>
+        <Button size="sm" disabled={busy || !Number(amount) || !receipt} onClick={() => receipt && onSubmit({ amount: Number(amount), receipt_url: receipt })}>
           {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Я отправил"}
         </Button>
       </div>
