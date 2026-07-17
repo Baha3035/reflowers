@@ -67,17 +67,17 @@ function Home() {
       {/* Quick actions — 1 tap to main flows */}
       <section className="mx-auto mt-4 max-w-7xl px-4 md:px-8">
         <div className="grid grid-cols-3 gap-2 md:gap-3">
-          <Link to="/catalog" className="group flex items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 md:p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary md:h-11 md:w-11"><ShoppingBag className="h-5 w-5" /></span>
-            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">{t("quick.buy")}</div><div className="truncate text-[11px] text-muted-foreground">{t("quick.buySub")}</div></div>
+          <Link to="/catalog" className="group flex flex-col items-center gap-1.5 rounded-2xl bg-card p-2.5 text-center shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 sm:flex-row sm:gap-2 sm:text-left md:p-4">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary sm:h-10 sm:w-10 md:h-11 md:w-11"><ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" /></span>
+            <div className="min-w-0"><div className="text-[13px] font-semibold leading-tight sm:text-sm md:text-base">{t("quick.buy")}</div><div className="hidden truncate text-[11px] text-muted-foreground sm:block">{t("quick.buySub")}</div></div>
           </Link>
-          <Link to="/sell" className="group flex items-center gap-2 rounded-2xl bg-primary p-3 text-primary-foreground shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 md:p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-foreground/15 md:h-11 md:w-11"><Plus className="h-5 w-5" /></span>
-            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">{t("quick.sell")}</div><div className="truncate text-[11px] opacity-80">{t("quick.sellSub")}</div></div>
+          <Link to="/sell" className="group flex flex-col items-center gap-1.5 rounded-2xl bg-primary p-2.5 text-center text-primary-foreground shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 sm:flex-row sm:gap-2 sm:text-left md:p-4">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-foreground/15 sm:h-10 sm:w-10 md:h-11 md:w-11"><Plus className="h-4 w-4 sm:h-5 sm:w-5" /></span>
+            <div className="min-w-0"><div className="text-[13px] font-semibold leading-tight sm:text-sm md:text-base">{t("quick.sell")}</div><div className="hidden truncate text-[11px] opacity-80 sm:block">{t("quick.sellSub")}</div></div>
           </Link>
-          <Link to="/catalog" className="group flex items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 md:p-4">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive md:h-11 md:w-11"><Flame className="h-5 w-5" /></span>
-            <div className="min-w-0"><div className="text-sm font-semibold leading-tight md:text-base">{t("quick.urgent")}</div><div className="truncate text-[11px] text-muted-foreground">{t("quick.urgentSub")}</div></div>
+          <Link to="/catalog" className="group flex flex-col items-center gap-1.5 rounded-2xl bg-card p-2.5 text-center shadow-[var(--shadow-card)] transition hover:-translate-y-0.5 sm:flex-row sm:gap-2 sm:text-left md:p-4">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-destructive/10 text-destructive sm:h-10 sm:w-10 md:h-11 md:w-11"><Flame className="h-4 w-4 sm:h-5 sm:w-5" /></span>
+            <div className="min-w-0"><div className="text-[13px] font-semibold leading-tight sm:text-sm md:text-base">{t("quick.urgent")}</div><div className="hidden truncate text-[11px] text-muted-foreground sm:block">{t("quick.urgentSub")}</div></div>
           </Link>
         </div>
       </section>
