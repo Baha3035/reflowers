@@ -5,6 +5,7 @@ import { useApp } from "@/lib/store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteUserAsAdmin, getUserEmails, getUserStats } from "@/lib/admin.functions";
+import { adminCancelDeal } from "@/lib/deals.functions";
 import { useEffect } from "react";
 import { ShieldCheck, Users, Package, ShoppingBag, Store, Trash2, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -107,11 +108,22 @@ function AdminPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("orders")
-        .select("id, price, commission, status, buyer_id, seller_id, created_at")
+        .select("id, price, final_price, commission, status, deal_status, buyer_id, seller_id, listing_id, conversation_id, created_at")
         .order("created_at", { ascending: false })
         .limit(100);
       return data ?? [];
     },
+  });
+
+  const cancelDealFn = useServerFn(adminCancelDeal);
+  const cancelDealMutation = useMutation({
+    mutationFn: (v: { order_id: string; reason: string }) => cancelDealFn({ data: v }),
+    onSuccess: () => {
+      toast.success("Сделка отменена");
+      qc.invalidateQueries({ queryKey: ["admin-orders"] });
+      qc.invalidateQueries({ queryKey: ["admin-user-stats"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Не удалось отменить"),
   });
 
   if (authLoading || adminLoading) {
@@ -136,7 +148,15 @@ function AdminPage() {
   const totalUsers = profiles.data?.length ?? 0;
   const totalShops = profiles.data?.filter(p => p.seller_type === "shop").length ?? 0;
   const totalListings = listings.data?.length ?? 0;
-  const totalCommission = (orders.data ?? []).reduce((s, o) => s + (o.commission ?? 0), 0);
+  // Commission is counted only from completed deals
+  const totalCommission = (orders.data ?? [])
+    .filter(o => (o as { deal_status?: string }).deal_status === "completed")
+    .reduce((s, o) => s + (o.commission ?? 0), 0);
+  const completedDeals = (orders.data ?? []).filter(o => (o as { deal_status?: string }).deal_status === "completed").length;
+  const activeDeals = (orders.data ?? []).filter(o => {
+    const st = (o as { deal_status?: string }).deal_status;
+    return st && st !== "completed" && st !== "cancelled";
+  }).length;
 
   return (
     <AppLayout>
@@ -146,11 +166,12 @@ function AdminPage() {
           <h1 className="font-display text-2xl md:text-3xl">Панель управления</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           <Stat icon={<Users className="h-4 w-4" />} label="Участников" value={totalUsers} />
           <Stat icon={<Store className="h-4 w-4" />} label="Магазинов" value={totalShops} />
           <Stat icon={<Package className="h-4 w-4" />} label="Объявлений" value={totalListings} />
-          <Stat icon={<ShoppingBag className="h-4 w-4" />} label="Комиссия, сом" value={totalCommission} />
+          <Stat icon={<ShoppingBag className="h-4 w-4" />} label="Сделок активн./завершён." value={`${activeDeals} / ${completedDeals}`} />
+          <Stat icon={<ShoppingBag className="h-4 w-4" />} label="Комиссия (завершено), сом" value={totalCommission} />
         </div>
 
         <section className="mt-8">
@@ -238,28 +259,55 @@ function AdminPage() {
         </section>
 
         <section className="mt-8">
-          <h2 className="font-display text-lg mb-3">Заказы</h2>
+          <h2 className="font-display text-lg mb-3">Сделки</h2>
           <div className="overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-card)]">
             <table className="w-full text-sm">
               <thead className="bg-muted text-xs text-muted-foreground">
                 <tr>
                   <th className="p-3 text-left">Сумма</th>
                   <th className="p-3 text-left">Комиссия</th>
-                  <th className="p-3 text-left">Статус</th>
+                  <th className="p-3 text-left">Статус сделки</th>
                   <th className="p-3 text-left">Дата</th>
+                  <th className="p-3 text-right">Действия</th>
                 </tr>
               </thead>
               <tbody>
-                {(orders.data ?? []).map(o => (
-                  <tr key={o.id} className="border-t border-border/60">
-                    <td className="p-3 font-medium">{o.price} сом</td>
-                    <td className="p-3 text-primary">{o.commission} сом</td>
-                    <td className="p-3 text-xs">{o.status}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString()}</td>
-                  </tr>
-                ))}
+                {(orders.data ?? []).map(o => {
+                  const oo = o as { id: string; price: number; final_price?: number | null; commission: number; deal_status?: string; conversation_id?: string | null; created_at: string };
+                  const canCancel = oo.deal_status && oo.deal_status !== "completed" && oo.deal_status !== "cancelled";
+                  return (
+                    <tr key={oo.id} className="border-t border-border/60">
+                      <td className="p-3 font-medium">{oo.final_price ?? oo.price} сом</td>
+                      <td className="p-3 text-primary">{oo.commission} сом</td>
+                      <td className="p-3 text-xs">{oo.deal_status ?? "—"}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{new Date(oo.created_at).toLocaleString()}</td>
+                      <td className="p-3 text-right">
+                        <div className="inline-flex gap-2">
+                          {oo.conversation_id && (
+                            <Link to="/conversation/$id" params={{ id: oo.conversation_id }} className="text-xs text-primary underline">
+                              Открыть
+                            </Link>
+                          )}
+                          {canCancel && (
+                            <button
+                              onClick={() => {
+                                const r = prompt("Причина отмены сделки?", "Отменено администратором");
+                                if (r === null) return;
+                                cancelDealMutation.mutate({ order_id: oo.id, reason: r || "Отменено администратором" });
+                              }}
+                              disabled={cancelDealMutation.isPending}
+                              className="text-xs text-destructive underline"
+                            >
+                              Отменить
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {(!orders.data || orders.data.length === 0) && (
-                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={4}>Заказов пока нет</td></tr>
+                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={5}>Сделок пока нет</td></tr>
                 )}
               </tbody>
             </table>
@@ -270,11 +318,11 @@ function AdminPage() {
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">{icon}{label}</div>
-      <div className="mt-1 font-display text-2xl font-semibold">{value.toLocaleString()}</div>
+      <div className="mt-1 font-display text-2xl font-semibold">{typeof value === "number" ? value.toLocaleString() : value}</div>
     </div>
   );
 }
