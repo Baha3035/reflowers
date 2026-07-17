@@ -300,7 +300,7 @@ function AdminPage() {
                   );
                 })}
                 {(!orders.data || orders.data.length === 0) && (
-                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={5}>Сделок пока нет</td></tr>
+                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={4}>Сделок пока нет</td></tr>
                 )}
               </tbody>
             </table>
