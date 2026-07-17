@@ -198,13 +198,33 @@ export function DealCard({ conversationId }: { conversationId: string }) {
   const hasTerms = order.final_price != null || order.payment_details;
   const remainder = (order.final_price ?? 0) + (order.delivery_cost ?? 0) - (order.prepayment_amount ?? 0);
 
+  // Latest prepayment receipt (from buyer_sent_prepayment event)
+  const latestReceipt = (() => {
+    const list = events.data ?? [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const e = list[i];
+      if (e.event_type === "buyer_sent_prepayment") {
+        const url = (e.payload as { receipt_url?: string } | null)?.receipt_url;
+        const amount = (e.payload as { amount?: number } | null)?.amount;
+        if (url) return { url, amount };
+      }
+    }
+    return null;
+  })();
+
+  // Combined action: confirm prepayment + mark bouquet shipped in one click
+  const confirmAndShip = async () => {
+    await confirmPayFn({ data: { order_id: order.id, ok: true } });
+    await bouquetFn({ data: { order_id: order.id, mode: "shipped" } });
+  };
+
   // Primary action (single button per role/status)
   let primary: { label: string; onClick: () => void; loading?: string } | null = null;
   let hint: string | null = null;
   if (s === "awaiting_confirmation" && isSeller) primary = { label: "Принять", onClick: () => setShowTerms(true) };
   else if (s === "awaiting_confirmation" && isBuyer) hint = "Ждём продавца";
   else if (s === "awaiting_payment" && isBuyer) primary = { label: "Я оплатил", onClick: () => setShowPay(true) };
-  else if (s === "awaiting_payment" && isSeller) primary = { label: "Оплата пришла", onClick: () => wrap("confirmPre", () => confirmPayFn({ data: { order_id: order.id, ok: true } })), loading: "confirmPre" };
+  else if (s === "awaiting_payment" && isSeller) primary = { label: "Получил оплату — отправил букет", onClick: () => wrap("confirmShip", confirmAndShip), loading: "confirmShip" };
   else if (s === "in_progress" && isSeller) primary = { label: "Отправил букет", onClick: () => wrap("pickup", () => bouquetFn({ data: { order_id: order.id, mode: "shipped" } })), loading: "pickup" };
   else if (s === "in_progress" && isBuyer) hint = "Букет готовится";
   else if (s === "awaiting_completion" && isBuyer)
@@ -252,6 +272,18 @@ export function DealCard({ conversationId }: { conversationId: string }) {
         <div className="mt-1.5 rounded-lg bg-muted px-2 py-1.5 text-xs">
           <span className="text-muted-foreground">Реквизиты: </span>
           <span className="font-medium break-all">{order.payment_details}</span>
+        </div>
+      )}
+
+      {s === "awaiting_payment" && isSeller && latestReceipt && (
+        <div className="mt-1.5 flex items-center gap-2 rounded-lg bg-muted px-2 py-1.5 text-xs">
+          <a href={latestReceipt.url} target="_blank" rel="noreferrer" className="shrink-0">
+            <img src={latestReceipt.url} alt="Чек" className="h-12 w-12 rounded object-cover" />
+          </a>
+          <div className="min-w-0">
+            <div className="text-muted-foreground">Чек от покупателя{latestReceipt.amount ? ` · ${fmtSom(latestReceipt.amount)}` : ""}</div>
+            <a href={latestReceipt.url} target="_blank" rel="noreferrer" className="text-primary underline">Открыть чек</a>
+          </div>
         </div>
       )}
 
