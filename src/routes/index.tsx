@@ -3,7 +3,7 @@ import { AppLayout, SearchBar } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { ShopCard } from "@/components/marketplace/ShopCard";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES, DISTRICTS, LISTINGS, SELLERS, IMAGES } from "@/lib/mock-data";
+import { DISTRICTS, LISTINGS, SELLERS, IMAGES, boostRank } from "@/lib/mock-data";
 import { useDbListings } from "@/lib/db-listings";
 import { useApp } from "@/lib/store";
 import { ArrowRight, Leaf, Sparkles, ShoppingBag, Plus, Flame } from "lucide-react";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({ component: Home });
 function Home() {
   const { sellerMode, setSellerMode, t } = useApp();
   const { data: dbListings = [] } = useDbListings();
-  const all = [...dbListings, ...LISTINGS];
+  const all = [...dbListings, ...LISTINGS].sort((a, b) => boostRank(a) - boostRank(b));
   const listings = sellerMode === "private" ? all.filter(l => l.sellerType !== "shop") : all.filter(l => l.sellerType === "shop");
   const nearby = all.slice(0, 8);
   const urgent = all.filter(l => l.urgent).slice(0, 4);
@@ -92,18 +92,6 @@ function Home() {
             )}>
               {m === "private" ? t("seller.people") : t("seller.shops")}
             </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="mx-auto mt-5 max-w-7xl md:px-8">
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-2 md:px-0">
-          {CATEGORIES.map(c => (
-            <Link key={c.id} to="/catalog" className="flex shrink-0 items-center gap-2 rounded-full bg-card px-4 py-2.5 text-sm shadow-[var(--shadow-card)] transition hover:-translate-y-0.5">
-              <span className="text-base">{c.icon}</span>
-              <span className="whitespace-nowrap font-medium text-foreground/80">{c.label}</span>
-            </Link>
           ))}
         </div>
       </section>
