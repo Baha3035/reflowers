@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreHorizontal, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, MoreHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   sellerRespond,
