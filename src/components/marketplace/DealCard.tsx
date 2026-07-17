@@ -417,7 +417,6 @@ function TermsModal({
   const [delivery, setDelivery] = useState(String(initial.delivery_cost ?? 0));
   const [method, setMethod] = useState(initial.payment_method ?? "MBank");
   const [details, setDetails] = useState(initial.payment_details ?? "");
-  const [deadline, setDeadline] = useState("");
 
   const applyPct = (pct: number) => {
     const base = Number(finalPrice) || 0;
