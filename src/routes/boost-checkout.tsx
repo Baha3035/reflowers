@@ -31,9 +31,9 @@ function BoostCheckout() {
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
 
-  const ids = kinds.split(",").filter(Boolean).filter(id => id in BOOSTS);
-  const items = ids.map(id => ({ id, ...BOOSTS[id] }));
-  const total = items.reduce((s, b) => s + b.price, 0);
+  const ids: string[] = kinds.split(",").filter(Boolean).filter((id: string) => id in BOOSTS);
+  const items = ids.map((id: string) => ({ id, ...BOOSTS[id] }));
+  const total = items.reduce((s: number, b: { price: number }) => s + b.price, 0);
 
   const pay = async () => {
     if (!user) { toast.info("Войдите"); return; }
@@ -51,7 +51,12 @@ function BoostCheckout() {
       if (be) throw be;
 
       // Apply boost flags on listing
-      const patch: Record<string, string | boolean> = {};
+      const patch: {
+        boost_bump_until?: string;
+        boost_highlight_until?: string;
+        boost_top_until?: string;
+        urgent?: boolean;
+      } = {};
       for (const b of items) {
         const exp = new Date(now + b.hours * 3600_000).toISOString();
         if (b.kind === "bump") patch.boost_bump_until = exp;

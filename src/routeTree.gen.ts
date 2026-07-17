@@ -17,6 +17,7 @@ import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
+import { Route as BoostCheckoutRouteImport } from './routes/boost-checkout'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -64,6 +65,11 @@ const CatalogRoute = CatalogRouteImport.update({
   path: '/catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BoostCheckoutRoute = BoostCheckoutRouteImport.update({
+  id: '/boost-checkout',
+  path: '/boost-checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/boost-checkout': typeof BoostCheckoutRoute
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/favorites': typeof FavoritesRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/boost-checkout': typeof BoostCheckoutRoute
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/favorites': typeof FavoritesRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/boost-checkout': typeof BoostCheckoutRoute
   '/catalog': typeof CatalogRoute
   '/checkout': typeof CheckoutRoute
   '/favorites': typeof FavoritesRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/boost-checkout'
     | '/catalog'
     | '/checkout'
     | '/favorites'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/boost-checkout'
     | '/catalog'
     | '/checkout'
     | '/favorites'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/boost-checkout'
     | '/catalog'
     | '/checkout'
     | '/favorites'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  BoostCheckoutRoute: typeof BoostCheckoutRoute
   CatalogRoute: typeof CatalogRoute
   CheckoutRoute: typeof CheckoutRoute
   FavoritesRoute: typeof FavoritesRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boost-checkout': {
+      id: '/boost-checkout'
+      path: '/boost-checkout'
+      fullPath: '/boost-checkout'
+      preLoaderRoute: typeof BoostCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  BoostCheckoutRoute: BoostCheckoutRoute,
   CatalogRoute: CatalogRoute,
   CheckoutRoute: CheckoutRoute,
   FavoritesRoute: FavoritesRoute,
