@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, ChevronDown, ChevronUp, Loader2, ShieldAlert, X } from "lucide-react";
+import { Loader2, MoreHorizontal, X, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import {
   sellerRespond,
@@ -54,10 +54,10 @@ type Event = {
 };
 
 const STATUS_LABEL: Record<DealStatus, string> = {
-  awaiting_confirmation: "Ожидает подтверждения",
-  awaiting_payment: "Ожидает оплаты",
-  in_progress: "Заказ выполняется",
-  awaiting_completion: "Ожидает завершения",
+  awaiting_confirmation: "Ждём продавца",
+  awaiting_payment: "К оплате",
+  in_progress: "В работе",
+  awaiting_completion: "К получению",
   completed: "Завершена",
   cancelled: "Отменена",
   disputed: "Спор",
@@ -271,7 +271,7 @@ export function DealCard({ conversationId }: { conversationId: string }) {
         )}
 
         {s === "awaiting_payment" && isBuyer && (
-          <Button size="sm" onClick={() => setShowPay(true)}>Я отправил предоплату</Button>
+          <Button size="sm" onClick={() => setShowPay(true)}>Я оплатил</Button>
         )}
         {s === "awaiting_payment" && isSeller && (
           <>
