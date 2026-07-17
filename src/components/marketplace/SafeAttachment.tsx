@@ -62,7 +62,17 @@ export function ReceiptPreview({
 }) {
   const [open, setOpen] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const canPreview = isPreviewableImage(url) && !failed;
+
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadUrl(url, title);
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className={cn("min-w-0 rounded-xl border border-border bg-background/70 p-2", className)}>
@@ -90,9 +100,14 @@ export function ReceiptPreview({
                 Открыть
               </button>
             )}
-            <a href={url} download className="inline-flex items-center gap-1 text-muted-foreground underline underline-offset-2">
-              <Download className="h-3 w-3" /> {isPdf(url) ? "Скачать PDF" : compact ? "Скачать" : "Скачать файл"}
-            </a>
+            <button
+              type="button"
+              onClick={download}
+              disabled={downloading}
+              className="inline-flex items-center gap-1 text-muted-foreground underline underline-offset-2 disabled:opacity-60"
+            >
+              <Download className="h-3 w-3" /> {downloading ? "Скачиваем…" : isPdf(url) ? "Скачать PDF" : compact ? "Скачать" : "Скачать файл"}
+            </button>
           </div>
         </div>
       </div>
@@ -102,16 +117,54 @@ export function ReceiptPreview({
 }
 
 function FileAttachment({ url, label }: { url: string; label: string }) {
+  const [downloading, setDownloading] = useState(false);
+  const download = async () => {
+    setDownloading(true);
+    try {
+      await downloadUrl(url, label);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
-    <a
-      href={url}
-      download
+    <button
+      type="button"
+      onClick={download}
+      disabled={downloading}
       className="flex max-w-full items-center gap-2 rounded-xl bg-background/70 p-2 text-xs text-foreground underline underline-offset-2"
     >
       <FileText className="h-4 w-4 shrink-0" />
-      <span className="min-w-0 truncate">{label}</span>
-    </a>
+      <span className="min-w-0 truncate">{downloading ? "Скачиваем…" : label}</span>
+    </button>
   );
+}
+
+async function downloadUrl(url: string, label: string) {
+  const response = await fetch(url, { credentials: "omit" });
+  if (!response.ok) throw new Error("download failed");
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const filename = getFilename(url, label, blob.type);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  a.rel = "noopener noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1_000);
+}
+
+function getFilename(url: string, label: string, mime: string) {
+  try {
+    const last = decodeURIComponent(new URL(url).pathname.split("/").filter(Boolean).pop() || "");
+    if (last.includes(".")) return last;
+  } catch {
+    // ignore
+  }
+  const ext = mime.includes("pdf") ? "pdf" : mime.includes("png") ? "png" : "jpg";
+  return `${label || "receipt"}.${ext}`.replace(/[/\\?%*:|"<>]/g, "-");
 }
 
 function AttachmentLightbox({ url, alt, onClose }: { url: string; alt: string; onClose: () => void }) {
