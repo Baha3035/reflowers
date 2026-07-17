@@ -18,6 +18,9 @@ type DbListing = {
   status: "active" | "sold" | "hidden" | "expired";
   urgent: boolean;
   created_at: string;
+  boost_top_until?: string | null;
+  boost_highlight_until?: string | null;
+  boost_bump_until?: string | null;
 };
 
 const FALLBACK_IMG = IMAGES.mixed;
@@ -42,6 +45,9 @@ export function mapDbListing(l: DbListing): Listing {
     size: "Средний",
     description: l.description ?? undefined,
     urgent: l.urgent,
+    boostTopUntil: l.boost_top_until ?? null,
+    boostHighlightUntil: l.boost_highlight_until ?? null,
+    boostBumpUntil: l.boost_bump_until ?? null,
   };
 }
 
@@ -51,7 +57,7 @@ export function useDbListings() {
     queryFn: async (): Promise<Listing[]> => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id, seller_id, title, description, price, original_price, category, condition, city, district, images, status, urgent, created_at")
+        .select("id, seller_id, title, description, price, original_price, category, condition, city, district, images, status, urgent, created_at, boost_top_until, boost_highlight_until, boost_bump_until")
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(100);
