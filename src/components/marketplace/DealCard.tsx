@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreHorizontal, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, MoreHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   sellerRespond,
@@ -54,12 +54,12 @@ type Event = {
 };
 
 const STATUS_LABEL: Record<DealStatus, string> = {
-  awaiting_confirmation: "Ждём продавца",
-  awaiting_payment: "К оплате",
-  in_progress: "В работе",
-  awaiting_completion: "К получению",
-  completed: "Завершена",
-  cancelled: "Отменена",
+  awaiting_confirmation: "Запрос",
+  awaiting_payment: "Оплата",
+  in_progress: "Готовим",
+  awaiting_completion: "Доставка",
+  completed: "Готово",
+  cancelled: "Отменено",
   disputed: "Спор",
 };
 
@@ -195,20 +195,23 @@ export function DealCard({ conversationId }: { conversationId: string }) {
   const canAct = s !== "completed" && s !== "cancelled";
   const isNewSeller = sellerRep.data && !sellerRep.data.verified && sellerRep.data.completed < 3;
 
+  const hasTerms = order.final_price != null || order.payment_details;
+  const remainder = (order.final_price ?? 0) + (order.delivery_cost ?? 0) - (order.prepayment_amount ?? 0);
+
   // Primary action (single button per role/status)
   let primary: { label: string; onClick: () => void; loading?: string } | null = null;
   let hint: string | null = null;
-  if (s === "awaiting_confirmation" && isSeller) primary = { label: "Подтвердить", onClick: () => setShowTerms(true) };
+  if (s === "awaiting_confirmation" && isSeller) primary = { label: "Принять", onClick: () => setShowTerms(true) };
   else if (s === "awaiting_confirmation" && isBuyer) hint = "Ждём продавца";
   else if (s === "awaiting_payment" && isBuyer) primary = { label: "Я оплатил", onClick: () => setShowPay(true) };
   else if (s === "awaiting_payment" && isSeller) primary = { label: "Оплата пришла", onClick: () => wrap("confirmPre", () => confirmPayFn({ data: { order_id: order.id, ok: true } })), loading: "confirmPre" };
-  else if (s === "in_progress" && isSeller) primary = { label: "Букет готов", onClick: () => wrap("pickup", () => bouquetFn({ data: { order_id: order.id, mode: "pickup" } })), loading: "pickup" };
+  else if (s === "in_progress" && isSeller) primary = { label: "Отправил букет", onClick: () => wrap("pickup", () => bouquetFn({ data: { order_id: order.id, mode: "shipped" } })), loading: "pickup" };
   else if (s === "in_progress" && isBuyer) hint = "Букет готовится";
-  else if (s === "awaiting_completion" && isBuyer) primary = { label: "Получил букет", onClick: () => wrap("received", () => receivedFn({ data: { order_id: order.id } })), loading: "received" };
+  else if (s === "awaiting_completion" && isBuyer)
+    primary = remainder > 0
+      ? { label: `Отправил остаток ${fmtSom(remainder)}`, onClick: () => wrap("sentFull", () => sentFullFn({ data: { order_id: order.id } })), loading: "sentFull" }
+      : { label: "Получил букет", onClick: () => wrap("received", () => receivedFn({ data: { order_id: order.id } })), loading: "received" };
   else if (s === "awaiting_completion" && isSeller) primary = { label: "Оплата получена", onClick: () => wrap("confirmFull", () => confirmFullFn({ data: { order_id: order.id } })), loading: "confirmFull" };
-
-  const hasTerms = order.final_price != null || order.payment_details;
-  const remainder = (order.final_price ?? 0) + (order.delivery_cost ?? 0) - (order.prepayment_amount ?? 0);
 
   return (
     <div className="mb-2 rounded-xl border border-border bg-card px-3 py-2 text-sm">
@@ -252,36 +255,6 @@ export function DealCard({ conversationId }: { conversationId: string }) {
         </div>
       )}
 
-      {s === "awaiting_completion" && isBuyer && remainder > 0 && (
-        <button
-          type="button"
-          onClick={() => wrap("sentFull", () => sentFullFn({ data: { order_id: order.id } }))}
-          className="mt-1 text-xs text-primary underline underline-offset-2"
-        >
-          Отправил остаток {fmtSom(remainder)}
-        </button>
-      )}
-
-      {s === "awaiting_payment" && isSeller && (
-        <button
-          type="button"
-          onClick={() => wrap("rejectPre", () => confirmPayFn({ data: { order_id: order.id, ok: false } }))}
-          className="mt-1 text-xs text-muted-foreground underline underline-offset-2"
-        >
-          Оплата не поступила
-        </button>
-      )}
-
-      {s === "awaiting_confirmation" && isSeller && (
-        <button
-          type="button"
-          onClick={() => wrap("decline", () => respondFn({ data: { order_id: order.id, accept: false } }))}
-          className="mt-1 text-xs text-muted-foreground underline underline-offset-2"
-        >
-          Отклонить заказ
-        </button>
-      )}
-
       {s === "completed" && (
         <div className="mt-1 text-xs text-emerald-700">Сделка завершена — оставьте отзыв ниже</div>
       )}
@@ -314,26 +287,18 @@ export function DealCard({ conversationId }: { conversationId: string }) {
             ))}
           </ul>
           {canAct && (
-            <div className="mt-2 flex gap-3 text-[11px]">
-              <button onClick={() => setShowProblem(true)} className="text-destructive underline underline-offset-2">Есть проблема</button>
-              <button onClick={() => setShowCancel(true)} className="text-muted-foreground underline underline-offset-2">Отменить сделку</button>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+              {s === "awaiting_confirmation" && isSeller && (
+                <button onClick={() => wrap("decline", () => respondFn({ data: { order_id: order.id, accept: false } }))} className="text-muted-foreground underline underline-offset-2">Отклонить</button>
+              )}
+              {s === "awaiting_payment" && isSeller && (
+                <button onClick={() => wrap("rejectPre", () => confirmPayFn({ data: { order_id: order.id, ok: false } }))} className="text-muted-foreground underline underline-offset-2">Оплата не пришла</button>
+              )}
+              <button onClick={() => setShowProblem(true)} className="text-destructive underline underline-offset-2">Проблема</button>
+              <button onClick={() => setShowCancel(true)} className="text-muted-foreground underline underline-offset-2">Отменить</button>
             </div>
           )}
-          <button
-            onClick={() => setExpandedHistory(false)}
-            className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-          >
-            Свернуть <ChevronUp className="h-3 w-3" />
-          </button>
         </div>
-      )}
-      {!expandedHistory && canAct && (
-        <button
-          onClick={() => setExpandedHistory(true)}
-          className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          Подробнее <ChevronDown className="h-3 w-3" />
-        </button>
       )}
 
       {/* Modals */}
