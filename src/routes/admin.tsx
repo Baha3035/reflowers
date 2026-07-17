@@ -148,10 +148,6 @@ function AdminPage() {
   const totalUsers = profiles.data?.length ?? 0;
   const totalShops = profiles.data?.filter(p => p.seller_type === "shop").length ?? 0;
   const totalListings = listings.data?.length ?? 0;
-  // Commission is counted only from completed deals
-  const totalCommission = (orders.data ?? [])
-    .filter(o => (o as { deal_status?: string }).deal_status === "completed")
-    .reduce((s, o) => s + (o.commission ?? 0), 0);
   const completedDeals = (orders.data ?? []).filter(o => (o as { deal_status?: string }).deal_status === "completed").length;
   const activeDeals = (orders.data ?? []).filter(o => {
     const st = (o as { deal_status?: string }).deal_status;
@@ -166,12 +162,11 @@ function AdminPage() {
           <h1 className="font-display text-2xl md:text-3xl">Панель управления</h1>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat icon={<Users className="h-4 w-4" />} label="Участников" value={totalUsers} />
           <Stat icon={<Store className="h-4 w-4" />} label="Магазинов" value={totalShops} />
           <Stat icon={<Package className="h-4 w-4" />} label="Объявлений" value={totalListings} />
           <Stat icon={<ShoppingBag className="h-4 w-4" />} label="Сделок активн./завершён." value={`${activeDeals} / ${completedDeals}`} />
-          <Stat icon={<ShoppingBag className="h-4 w-4" />} label="Комиссия (завершено), сом" value={totalCommission} />
         </div>
 
         <section className="mt-8">
@@ -265,7 +260,6 @@ function AdminPage() {
               <thead className="bg-muted text-xs text-muted-foreground">
                 <tr>
                   <th className="p-3 text-left">Сумма</th>
-                  <th className="p-3 text-left">Комиссия</th>
                   <th className="p-3 text-left">Статус сделки</th>
                   <th className="p-3 text-left">Дата</th>
                   <th className="p-3 text-right">Действия</th>
@@ -273,12 +267,11 @@ function AdminPage() {
               </thead>
               <tbody>
                 {(orders.data ?? []).map(o => {
-                  const oo = o as { id: string; price: number; final_price?: number | null; commission: number; deal_status?: string; conversation_id?: string | null; created_at: string };
+                  const oo = o as { id: string; price: number; final_price?: number | null; deal_status?: string; conversation_id?: string | null; created_at: string };
                   const canCancel = oo.deal_status && oo.deal_status !== "completed" && oo.deal_status !== "cancelled";
                   return (
                     <tr key={oo.id} className="border-t border-border/60">
                       <td className="p-3 font-medium">{oo.final_price ?? oo.price} сом</td>
-                      <td className="p-3 text-primary">{oo.commission} сом</td>
                       <td className="p-3 text-xs">{oo.deal_status ?? "—"}</td>
                       <td className="p-3 text-xs text-muted-foreground">{new Date(oo.created_at).toLocaleString()}</td>
                       <td className="p-3 text-right">
