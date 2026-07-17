@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeBouquet } from "@/lib/analyze-bouquet.functions";
 import { DealCard } from "@/components/marketplace/DealCard";
+import { SafeImagePreview } from "@/components/marketplace/SafeAttachment";
 
 export const Route = createFileRoute("/conversation/$id")({
   head: () => ({ meta: [{ title: "Диалог — ReFlowers" }] }),
@@ -216,7 +217,7 @@ function ConversationPage() {
 
   return (
     <AppLayout hideBottomNav>
-      <div className="mx-auto flex h-[calc(100dvh-64px)] w-full max-w-3xl min-w-0 flex-col overflow-hidden px-2 md:px-6">
+      <div className="mx-auto flex h-[calc(100dvh-58px)] w-full max-w-3xl min-w-0 flex-col overflow-hidden px-2 md:h-[calc(100dvh-64px)] md:px-6">
         {/* User header */}
         <div className="mt-3 flex min-w-0 items-center gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-secondary overflow-hidden">
@@ -237,7 +238,7 @@ function ConversationPage() {
         </div>
 
         {/* Messages */}
-        <div className="mt-3 flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-3">
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-3">
           <DealCard conversationId={id} />
           {messages.isLoading ? (
             <div className="text-center text-sm text-muted-foreground">Загрузка сообщений…</div>
@@ -255,9 +256,7 @@ function ConversationPage() {
                   <div key={m.id} className={"flex " + (mine ? "justify-end" : "justify-start")}>
                     <div className={"max-w-[80%] min-w-0 rounded-2xl text-sm " + (isImage ? "overflow-hidden p-1 " : "px-3.5 py-2 ") + (mine ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-card rounded-bl-sm shadow-sm")}>
                       {isImage && imgUrl ? (
-                        <a href={imgUrl} target="_blank" rel="noreferrer" className="block">
-                          <img src={imgUrl} alt="Фото" className="max-h-72 w-full rounded-xl object-cover" loading="lazy" />
-                        </a>
+                        <SafeImagePreview url={imgUrl} alt="Фото" imageClassName="max-h-72 w-full rounded-xl object-cover" />
                       ) : (
                         <div className="whitespace-pre-wrap break-words">{m.body}</div>
                       )}
@@ -305,7 +304,7 @@ function ConversationPage() {
             <button type="button" onClick={() => setPhotoError(null)} className="text-[11px] underline">Скрыть</button>
           </div>
         )}
-        <form onSubmit={send} className="mt-2 mb-3 flex w-full min-w-0 items-end gap-1.5 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
+        <form onSubmit={send} className="mt-2 mb-2 flex w-full min-w-0 shrink-0 items-end gap-1.5 rounded-2xl bg-card p-2 shadow-[var(--shadow-card)]">
           <input
             ref={photoInputRef}
             type="file"
