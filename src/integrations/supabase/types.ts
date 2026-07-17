@@ -684,7 +684,7 @@ export type Database = {
     }
     Functions: {
       admin_cancel_deal: {
-        Args: { _order_id: string; _reason: string }
+        Args: { _actor: string; _order_id: string; _reason: string }
         Returns: undefined
       }
     }
