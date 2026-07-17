@@ -56,24 +56,22 @@ export interface Seller {
   workingHours?: string;
   address?: string;
   minOrder?: number;
-  id: string;
-  type: SellerType;
-  name: string;
-  avatar?: string;
-  rating: number;
-  sales: number;
-  responseTime: string;
-  memberSince: string;
-  verified: boolean;
-  district?: string;
-  deliveryTime?: string;
-  workingHours?: string;
-  address?: string;
-  minOrder?: number;
   reviewsCount: number;
   instagram?: string;
   whatsapp?: string;
   about?: string;
+}
+
+// Sort priority for boosted listings: top > urgent > highlight > bump > none.
+// Lower number = higher in the feed.
+export function boostRank(l: Listing): number {
+  const now = Date.now();
+  const active = (v?: string | null) => !!v && new Date(v).getTime() > now;
+  if (active(l.boostTopUntil)) return 1;
+  if (l.urgent) return 2;
+  if (active(l.boostHighlightUntil)) return 3;
+  if (active(l.boostBumpUntil)) return 4;
+  return 5;
 }
 
 export const DISTRICTS = [
