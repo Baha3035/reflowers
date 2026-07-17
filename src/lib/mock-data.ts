@@ -36,6 +36,9 @@ export interface Listing {
   description?: string;
   reason?: string;
   urgent?: boolean;
+  boostTopUntil?: string | null;
+  boostHighlightUntil?: string | null;
+  boostBumpUntil?: string | null;
 }
 
 export interface Seller {
@@ -57,6 +60,18 @@ export interface Seller {
   instagram?: string;
   whatsapp?: string;
   about?: string;
+}
+
+// Sort priority for boosted listings: top > urgent > highlight > bump > none.
+// Lower number = higher in the feed.
+export function boostRank(l: Listing): number {
+  const now = Date.now();
+  const active = (v?: string | null) => !!v && new Date(v).getTime() > now;
+  if (active(l.boostTopUntil)) return 1;
+  if (l.urgent) return 2;
+  if (active(l.boostHighlightUntil)) return 3;
+  if (active(l.boostBumpUntil)) return 4;
+  return 5;
 }
 
 export const DISTRICTS = [
@@ -107,16 +122,6 @@ export const LISTINGS: Listing[] = [
   { id: "l8", title: "Гортензии сиреневые", price: 2600, oldPrice: 4000, image: hydrangea, district: "Джал", freshness: "Получены сегодня", sellerType: "private", sellerId: "s2", delivery: true, flowerType: "Гортензии", color: "Фиолетовые", size: "Большой", hoursLeft: 14 },
   { id: "l9", title: "Белые розы, 15 шт.", price: 1200, oldPrice: 2500, image: whiteRoses, district: "Центр", freshness: "1 день", sellerType: "private", sellerId: "s3", delivery: false, badge: "Срочная продажа", flowerType: "Розы", color: "Белые", size: "Средний", count: 15, hoursLeft: 2, urgent: true },
   { id: "l10", title: "Букет «Летнее настроение»", price: 1900, image: mixed, district: "Асанбай", freshness: "Получен сегодня", sellerType: "private", sellerId: "s4", delivery: true, badge: "Сегодня", flowerType: "Смешанные", color: "Разноцветные", size: "Средний", hoursLeft: 22 },
-  { id: "l11", title: "Пионы «Сара Бернар»", price: 2800, oldPrice: 4200, image: pinkPeonies, district: "Южные микрорайоны", freshness: "Получены сегодня", sellerType: "private", sellerId: "s1", delivery: true, flowerType: "Пионы", color: "Розовые", size: "Большой", count: 21, hoursLeft: 16 },
-  { id: "l12", title: "Красные розы, 11 шт.", price: 700, image: redRoses, district: "Восток-5", freshness: "1 день", sellerType: "private", sellerId: "s5", delivery: false, flowerType: "Розы", color: "Красные", size: "Маленький", count: 11, hoursLeft: 5 },
-  { id: "l13", title: "Букет невесты (неиспользованный)", price: 3200, oldPrice: 7500, image: white51, district: "12 микрорайон", freshness: "Получен сегодня", sellerType: "private", sellerId: "s6", delivery: true, badge: "Срочная продажа", flowerType: "Розы", color: "Белые", size: "Большой", hoursLeft: 4, urgent: true },
-  { id: "l14", title: "Тюльпаны 25 шт., жёлтые", price: 1400, image: tulips, district: "Тунгуч", freshness: "Получены сегодня", sellerType: "private", sellerId: "s7", delivery: true, flowerType: "Тюльпаны", color: "Жёлтые", size: "Средний", count: 25, hoursLeft: 19 },
-  { id: "l15", title: "Микс роз в шляпной коробке", price: 2100, oldPrice: 3600, image: box, district: "Аламедин-1", freshness: "1 день", sellerType: "private", sellerId: "s3", delivery: true, flowerType: "Розы", color: "Розовые", size: "Средний", hoursLeft: 9 },
-  { id: "l16", title: "Букет из спрей-роз", price: 1100, image: spray, district: "Центр", freshness: "Получен сегодня", sellerType: "private", sellerId: "s1", delivery: false, flowerType: "Розы", color: "Разноцветные", size: "Маленький", hoursLeft: 15 },
-  { id: "l17", title: "Композиция с гортензиями и лизиантусом", price: 2900, image: hydrangea, district: "Джал", freshness: "Получена сегодня", sellerType: "private", sellerId: "s2", delivery: true, flowerType: "Гортензии", color: "Фиолетовые", size: "Большой", hoursLeft: 17 },
-  { id: "l18", title: "Белые розы 25 шт.", price: 2000, oldPrice: 3800, image: whiteRoses, district: "Асанбай", freshness: "1 день", sellerType: "private", sellerId: "s4", delivery: true, flowerType: "Розы", color: "Белые", size: "Средний", count: 25, hoursLeft: 7 },
-  { id: "l19", title: "Смешанный букет пастель", price: 1600, image: mixed, district: "Восток-5", freshness: "Получен сегодня", sellerType: "private", sellerId: "s5", delivery: true, flowerType: "Смешанные", color: "Разноцветные", size: "Средний", hoursLeft: 21 },
-  { id: "l20", title: "Пионы белые, 11 шт.", price: 2300, image: pinkPeonies, district: "Тунгуч", freshness: "Получены сегодня", sellerType: "private", sellerId: "s7", delivery: true, flowerType: "Пионы", color: "Белые", size: "Средний", count: 11, hoursLeft: 13 },
 
   // Shop listings
   { id: "sh1", title: "Авторский букет «Bloom Signature»", price: 4500, image: mixed, district: "Центр", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop1", delivery: true, badge: "Проверенный магазин", flowerType: "Смешанные", color: "Разноцветные", size: "Большой" },
@@ -124,11 +129,6 @@ export const LISTINGS: Listing[] = [
   { id: "sh3", title: "Букет пионов Grand", price: 5200, image: pinkPeonies, district: "Джал", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop2", delivery: true, badge: "Проверенный магазин", flowerType: "Пионы", color: "Розовые", size: "Большой" },
   { id: "sh4", title: "Композиция в коробке «Etoile»", price: 3800, image: box, district: "Центр", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop1", delivery: true, badge: "Проверенный магазин", flowerType: "Розы", color: "Розовые", size: "Средний" },
   { id: "sh5", title: "25 красных роз, длина 70см", price: 3200, image: redRoses, district: "Аламедин-1", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop3", delivery: true, badge: "Проверенный магазин", flowerType: "Розы", color: "Красные", size: "Средний", count: 25 },
-  { id: "sh6", title: "Букет тюльпанов «Весна»", price: 1900, image: tulips, district: "Центр", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop5", delivery: true, badge: "Проверенный магазин", flowerType: "Тюльпаны", color: "Жёлтые", size: "Средний" },
-  { id: "sh7", title: "Гортензии Deluxe", price: 4700, image: hydrangea, district: "Джал", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop2", delivery: true, badge: "Проверенный магазин", flowerType: "Гортензии", color: "Фиолетовые", size: "Большой" },
-  { id: "sh8", title: "Букет невесты «Elle»", price: 6800, image: whiteRoses, district: "Центр", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop4", delivery: true, badge: "Проверенный магазин", flowerType: "Розы", color: "Белые", size: "Средний" },
-  { id: "sh9", title: "Кустовые розы микс", price: 2600, image: spray, district: "Аламедин-1", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop3", delivery: true, badge: "Проверенный магазин", flowerType: "Розы", color: "Розовые", size: "Средний" },
-  { id: "sh10", title: "Свадебная композиция", price: 12000, image: mixed, district: "Центр", freshness: "Новый от магазина", sellerType: "shop", sellerId: "shop4", delivery: true, badge: "Проверенный магазин", flowerType: "Смешанные", color: "Белые", size: "Большой" },
 ];
 
 export const REVIEWS = [

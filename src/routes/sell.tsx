@@ -122,7 +122,7 @@ function Sell() {
         city: "Бишкек",
         district,
         images: photos,
-        urgent: !!boosts.urgent,
+        urgent: false,
         status: "active",
       }).select("id").single();
       if (error) throw error;

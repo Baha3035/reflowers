@@ -3,7 +3,7 @@ import { AppLayout, SearchBar } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { LISTINGS, DISTRICTS } from "@/lib/mock-data";
+import { LISTINGS, DISTRICTS, boostRank } from "@/lib/mock-data";
 import { useDbListings } from "@/lib/db-listings";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ function Catalog() {
       }
       case "recommended":
       default:
-        arr.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (b.oldPrice ?? 0) - (a.oldPrice ?? 0));
+        arr.sort((a, b) => boostRank(a) - boostRank(b) || (b.oldPrice ?? 0) - (a.oldPrice ?? 0));
     }
     return arr;
   }, [sellerMode, sortId, city, dbListings]);
