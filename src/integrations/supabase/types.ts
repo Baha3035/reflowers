@@ -118,6 +118,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["boost_kind"]
           listing_id: string
           price: number
+          receipt_url: string | null
           user_id: string
         }
         Insert: {
@@ -127,6 +128,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["boost_kind"]
           listing_id: string
           price: number
+          receipt_url?: string | null
           user_id: string
         }
         Update: {
@@ -136,6 +138,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["boost_kind"]
           listing_id?: string
           price?: number
+          receipt_url?: string | null
           user_id?: string
         }
         Relationships: [
