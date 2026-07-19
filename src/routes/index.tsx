@@ -39,21 +39,9 @@ function Home() {
                 <Link to="/catalog"><Button size="default" className="rounded-full md:h-11 md:px-6">{t("hero.find")} <ArrowRight className="h-4 w-4" /></Button></Link>
                 <Link to="/sell"><Button size="default" variant="secondary" className="rounded-full md:h-11 md:px-6">{t("hero.sellFlowers")}</Button></Link>
               </div>
-              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground md:mt-5">
-                <div><b className="text-foreground">1200+</b> {t("hero.stat1")}</div>
-                <div><b className="text-foreground">5</b> {t("hero.stat2")}</div>
-              </div>
             </div>
             <div className="relative hidden md:block">
               <img src={IMAGES.heroPeonies} alt="Букет пионов" width={1600} height={1200} className="aspect-[4/3] w-full rounded-3xl object-cover shadow-[var(--shadow-soft)]" />
-              <div className="absolute -bottom-3 -left-3 rounded-2xl bg-card px-3 py-2 text-xs shadow-[var(--shadow-soft)] md:-bottom-4 md:-left-4">
-                <div className="text-[10px] text-muted-foreground">Сегодня в 11:00</div>
-                <div className="font-medium">Пионы · 1 800 сом</div>
-              </div>
-              <div className="absolute -top-3 -right-3 rounded-2xl bg-card px-3 py-2 text-xs shadow-[var(--shadow-soft)] md:-top-4 md:-right-4">
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">✓ Проверенный продавец</div>
-                <div className="font-medium text-primary">−55% от магазина</div>
-              </div>
             </div>
           </div>
         </div>

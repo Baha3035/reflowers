@@ -118,6 +118,8 @@ const dict = {
     "fav.emptyDesc": "Сохраняйте букеты — мы предупредим о снижении цены и последних часах.",
     "fav.toCatalog": "В каталог",
     "fav.similar": "Похожие рекомендации",
+    "card.buy": "Купить",
+    "card.urgent": "Срочно",
   },
   ky: {
     back: "Артка",
@@ -236,6 +238,8 @@ const dict = {
     "fav.emptyDesc": "Букеттерди сактаңыз — баа түшкөндө жана акыркы сааттарда билдиребиз.",
     "fav.toCatalog": "Каталогго",
     "fav.similar": "Окшош сунуштар",
+    "card.buy": "Сатып алуу",
+    "card.urgent": "Тез",
   },
   en: {
     back: "Back",
@@ -354,6 +358,8 @@ const dict = {
     "fav.emptyDesc": "Save bouquets — we'll notify you about price drops and last hours.",
     "fav.toCatalog": "Open catalog",
     "fav.similar": "You might also like",
+    "card.buy": "Buy",
+    "card.urgent": "Urgent",
   },
 } as const;
 
