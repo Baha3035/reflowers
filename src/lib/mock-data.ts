@@ -39,6 +39,7 @@ export interface Listing {
   boostTopUntil?: string | null;
   boostHighlightUntil?: string | null;
   boostBumpUntil?: string | null;
+  status?: "active" | "reserved" | "sold" | "hidden" | "expired";
 }
 
 export interface Seller {
