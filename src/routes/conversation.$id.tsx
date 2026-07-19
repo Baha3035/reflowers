@@ -19,7 +19,7 @@ export const Route = createFileRoute("/conversation/$id")({
 
 function ConversationPage() {
   const { id } = Route.useParams();
-  const { user, authLoading } = useApp();
+  const { user, authLoading, t } = useApp();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [text, setText] = useState("");
@@ -198,14 +198,14 @@ function ConversationPage() {
   }
 
   if (authLoading || conv.isLoading) {
-    return <AppLayout><div className="p-10 text-center text-sm text-muted-foreground">Загрузка…</div></AppLayout>;
+    return <AppLayout><div className="p-10 text-center text-sm text-muted-foreground">{t("conv.loading")}</div></AppLayout>;
   }
   if (!conv.data) {
     return (
       <AppLayout>
         <div className="mx-auto max-w-md px-4 py-16 text-center">
-          <h1 className="font-display text-xl">Диалог не найден</h1>
-          <Link to="/messages" className="mt-4 inline-block text-primary underline">К списку сообщений</Link>
+          <h1 className="font-display text-xl">{t("conv.notFound")}</h1>
+          <Link to="/messages" className="mt-4 inline-block text-primary underline">{t("conv.toList")}</Link>
         </div>
       </AppLayout>
     );
@@ -241,10 +241,10 @@ function ConversationPage() {
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-3">
           <DealCard conversationId={id} />
           {messages.isLoading ? (
-            <div className="text-center text-sm text-muted-foreground">Загрузка сообщений…</div>
+            <div className="text-center text-sm text-muted-foreground">{t("conv.loadingMsg")}</div>
           ) : (messages.data ?? []).length === 0 ? (
             <div className="mx-auto mt-10 max-w-sm text-center text-sm text-muted-foreground">
-              Напишите первое сообщение — {otherName} получит его сразу.
+              {t("conv.empty").replace("{name}", otherName)}
             </div>
           ) : (
             <div className="space-y-2">
@@ -275,12 +275,7 @@ function ConversationPage() {
         {/* Composer */}
         {(() => {
           const quickReplies = [
-            "Здравствуйте! Ещё актуально?",
-            "Какая цена?",
-            "Можно посмотреть сегодня?",
-            "Где забрать?",
-            "Торг уместен?",
-            "Есть ещё фото?",
+            t("conv.q1"), t("conv.q2"), t("conv.q3"), t("conv.q4"), t("conv.q5"), t("conv.q6"),
           ];
           return (
             <div className="mt-2 flex flex-wrap gap-1.5 pb-1">
@@ -319,7 +314,7 @@ function ConversationPage() {
             className="shrink-0 rounded-full"
             onClick={() => photoInputRef.current?.click()}
             disabled={uploadingPhoto}
-            aria-label="Прикрепить фото"
+            aria-label={t("conv.attach")}
           >
             {uploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
           </Button>
@@ -328,7 +323,7 @@ function ConversationPage() {
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-            placeholder="Напишите сообщение…"
+            placeholder={t("conv.placeholder")}
             rows={1}
             maxLength={2000}
             className="max-h-40 w-full min-w-0 flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground"
