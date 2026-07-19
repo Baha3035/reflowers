@@ -16,6 +16,8 @@ type Ctx = {
   city: City;
   setCity: (c: City) => void;
   t: (key: TKey) => string;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
   user: User | null;
   session: Session | null;
   authLoading: boolean;
@@ -31,6 +33,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [city, setCity] = useState<City>("Бишкек");
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // hydrate from localStorage after mount
   useEffect(() => {
@@ -79,8 +82,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const t = useCallback((key: TKey) => DICT[language][key] ?? DICT.ru[key] ?? key, [language]);
   const value = useMemo(() => ({
     favorites, toggleFavorite, language, setLanguage, sellerMode, setSellerMode, city, setCity, t,
+    searchQuery, setSearchQuery,
     user: session?.user ?? null, session, authLoading, signOut,
-  }), [favorites, toggleFavorite, language, sellerMode, city, t, session, authLoading, signOut]);
+  }), [favorites, toggleFavorite, language, sellerMode, city, t, searchQuery, session, authLoading, signOut]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 }
