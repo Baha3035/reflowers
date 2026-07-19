@@ -14,7 +14,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ReviewSection } from "@/components/marketplace/ReviewSection";
 import { useServerFn } from "@tanstack/react-start";
 import { createDeal } from "@/lib/deals.functions";
-import { useApp as useAppRoot } from "@/lib/store";
 
 export const Route = createFileRoute("/listing/$id")({
   head: ({ params }) => {
