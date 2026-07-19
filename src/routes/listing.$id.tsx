@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ReviewSection } from "@/components/marketplace/ReviewSection";
 import { useServerFn } from "@tanstack/react-start";
 import { createDeal } from "@/lib/deals.functions";
+import { useApp as useAppRoot } from "@/lib/store";
 
 export const Route = createFileRoute("/listing/$id")({
   head: ({ params }) => {
@@ -47,6 +48,7 @@ function NotFound() {
 
 function ListingPage() {
   const { listing } = Route.useLoaderData();
+  const { t } = useApp();
   const isSellerUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.sellerId);
   const dbSeller = useQuery({
     queryKey: ["listing-seller", listing.sellerId],
@@ -92,11 +94,13 @@ function ListingPage() {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.id);
   const createDealFn = useServerFn(createDeal);
   const [buying, setBuying] = useState(false);
+  const notActive = listing.status && listing.status !== "active";
 
   async function wantToBuy() {
     if (!user) { navigate({ to: "/auth" }); return; }
     if (!isUuid) { toast.info("Это демо-объявление"); return; }
     if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
+    if (notActive) { toast.info(listing.status === "sold" ? t("listing.sold") : t("listing.reserved")); return; }
     setBuying(true);
     try {
       const res = await createDealFn({ data: { listing_id: listing.id } });
@@ -113,6 +117,7 @@ function ListingPage() {
     if (!user) { navigate({ to: "/auth" }); return; }
     if (!isUuid) { toast.info("Это демо-объявление"); return; }
     if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
+    if (notActive) { toast.info(listing.status === "sold" ? t("listing.sold") : t("listing.reserved")); return; }
     setSending(true);
     try {
       const { data: existing } = await supabase
@@ -206,7 +211,7 @@ function ListingPage() {
 
             {listing.description && (
               <div className="mt-4">
-                <h3 className="mb-1 text-sm font-semibold">Описание</h3>
+                <h3 className="mb-1 text-sm font-semibold">{t("listing.description")}</h3>
                 <p className="text-sm text-foreground/80 leading-relaxed">{listing.description}</p>
               </div>
             )}
@@ -235,14 +240,22 @@ function ListingPage() {
               <TrustBadge label="Безопасная сделка" />
             </div>
 
-            {/* Desktop actions */}
-            <div className="mt-5 hidden gap-2 md:flex">
-              <Button size="lg" onClick={wantToBuy} disabled={buying} className="flex-1 w-full rounded-full">{buying ? "…" : "Хочу купить"}</Button>
-              <Button size="lg" variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : "Написать"}</Button>
-            </div>
-            <div className="mt-2 hidden text-[11px] text-muted-foreground md:block">
-              ReFlowers не принимает и не хранит деньги. Оплата напрямую продавцу.
-            </div>
+            {notActive ? (
+              <div className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center text-sm font-medium text-destructive">
+                {listing.status === "sold" ? t("listing.sold") : t("listing.reserved")}
+              </div>
+            ) : (
+              <>
+                {/* Desktop actions */}
+                <div className="mt-5 hidden gap-2 md:flex">
+                  <Button size="lg" onClick={wantToBuy} disabled={buying} className="flex-1 w-full rounded-full">{buying ? "…" : t("listing.wantToBuy")}</Button>
+                  <Button size="lg" variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : t("listing.message")}</Button>
+                </div>
+                <div className="mt-2 hidden text-[11px] text-muted-foreground md:block">
+                  {t("listing.paymentNotice")}
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -251,7 +264,7 @@ function ListingPage() {
           <ReviewSection targetUserId={listing.sellerId} />
         ) : (
           <section className="mt-10">
-            <h2 className="font-display text-xl">Отзывы о продавце</h2>
+            <h2 className="font-display text-xl">{t("listing.reviews")}</h2>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               {REVIEWS.slice(0, 4).map(r => (
                 <div key={r.id} className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
@@ -268,7 +281,7 @@ function ListingPage() {
         )}
 
         <section className="mt-10">
-          <h2 className="font-display text-xl">Похожие букеты</h2>
+          <h2 className="font-display text-xl">{t("listing.similar")}</h2>
           <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
             {similar.map(l => <ListingCard key={l.id} listing={l} />)}
           </div>
@@ -276,12 +289,14 @@ function ListingPage() {
       </div>
 
       {/* Sticky mobile action bar */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md md:hidden">
-        <div className="mx-auto flex max-w-md gap-2 p-3">
-          <Button variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : "Написать"}</Button>
-          <Button onClick={wantToBuy} disabled={buying} className="flex-[1.4] w-full rounded-full">{buying ? "…" : `Хочу купить · ${formatSom(listing.price)}`}</Button>
+      {!notActive && (
+        <div className="fixed bottom-[72px] left-0 right-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-md md:hidden">
+          <div className="mx-auto flex max-w-md gap-2 p-3">
+            <Button variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : t("listing.message")}</Button>
+            <Button onClick={wantToBuy} disabled={buying} className="flex-[1.4] w-full rounded-full">{buying ? "…" : `${t("listing.wantToBuy")} · ${formatSom(listing.price)}`}</Button>
+          </div>
         </div>
-      </div>
+      )}
     </AppLayout>
   );
 }
