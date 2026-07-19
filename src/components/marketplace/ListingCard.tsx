@@ -10,7 +10,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export function ListingCard({ listing, compact = false, horizontal = false }: { listing: Listing; compact?: boolean; horizontal?: boolean }) {
-  const { favorites, toggleFavorite, user } = useApp();
+  const { favorites, toggleFavorite, user, t } = useApp();
   const fav = favorites.has(listing.id);
   const seller = getSeller(listing.sellerId);
   const discount = listing.oldPrice ? Math.round((1 - listing.price / listing.oldPrice) * 100) : 0;
@@ -102,7 +102,7 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
           {/* Badges */}
           <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
             {listing.urgent && (
-              <span className="rounded-full bg-destructive/95 px-2.5 py-1 text-[10px] font-semibold text-destructive-foreground shadow-sm">🔥 Срочно</span>
+              <span className="rounded-full bg-destructive/95 px-2.5 py-1 text-[10px] font-semibold text-destructive-foreground shadow-sm">🔥 {t("card.urgent")}</span>
             )}
             {listing.badge && !listing.urgent && (
               <span className="rounded-full bg-background/95 px-2.5 py-1 text-[10px] font-semibold text-foreground shadow-sm">{listing.badge}</span>
@@ -124,7 +124,7 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
             aria-label="Купить в 1 клик"
             className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground shadow-md transition hover:scale-105"
           >
-            <Zap className="h-3 w-3" /> {buying ? "…" : "Купить"}
+            <Zap className="h-3 w-3" /> {buying ? "…" : t("card.buy")}
           </button>
           {listing.hoursLeft && listing.hoursLeft <= 6 && (
             <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
