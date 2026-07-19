@@ -1,4 +1,4 @@
-import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Search, ArrowLeft, LogIn, ShieldCheck } from "lucide-react";
 import { useApp, CITIES, type City } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -192,11 +192,22 @@ export function BottomNav() {
 }
 
 export function SearchBar({ onFilter }: { onFilter?: () => void }) {
+  const { searchQuery, setSearchQuery, t } = useApp();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: s => s.location.pathname });
   return (
     <div className="flex items-center gap-2">
       <div className="flex flex-1 items-center gap-2 rounded-2xl bg-card px-4 py-3 shadow-[var(--shadow-card)]">
         <Search className="h-4 w-4 text-muted-foreground" />
-        <input placeholder="Розы, пионы, букеты до 2000 сом..." className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
+        <input
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && pathname !== "/catalog") navigate({ to: "/catalog" });
+          }}
+          placeholder={t("search.placeholder")}
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
       </div>
       <button onClick={onFilter} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[var(--shadow-soft)]">
         <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M6 12h12M10 18h4" /></svg>
