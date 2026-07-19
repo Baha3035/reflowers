@@ -244,7 +244,7 @@ function ConversationPage() {
             <div className="text-center text-sm text-muted-foreground">{t("conv.loadingMsg")}</div>
           ) : (messages.data ?? []).length === 0 ? (
             <div className="mx-auto mt-10 max-w-sm text-center text-sm text-muted-foreground">
-              {t("conv.empty").replace("{name}", otherName)}
+              {t("conv.empty").replace("{name}", otherName ?? "")}
             </div>
           ) : (
             <div className="space-y-2">
