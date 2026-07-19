@@ -48,6 +48,7 @@ export function mapDbListing(l: DbListing): Listing {
     boostTopUntil: l.boost_top_until ?? null,
     boostHighlightUntil: l.boost_highlight_until ?? null,
     boostBumpUntil: l.boost_bump_until ?? null,
+    status: l.status,
   };
 }
 
