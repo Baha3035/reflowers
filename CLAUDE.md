@@ -21,7 +21,9 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
 - Hosting/publishing, secrets (e.g. `LOVABLE_API_KEY`, service role key) and the database live in Lovable Cloud.
 
 ## Do not edit (generated)
-- `src/integrations/supabase/*` (client, server client, auth middleware, `types.ts`)
+- `src/integrations/supabase/*` (client, server client, auth middleware). Exception: when you add a
+  migration, mirror its tables/columns/functions in `types.ts` by hand so the build type-checks;
+  Lovable regenerates the file from the live schema later.
 - `src/routeTree.gen.ts`
 - `vite.config.ts` plugins — the Lovable config already adds them; duplicates break the app.
 
@@ -30,6 +32,8 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
 - Every table has RLS. New tables must enable RLS with explicit policies.
 - Deal state changes go through `deal_events` inserts; the `tg_deal_events_apply` trigger moves `orders.deal_status`.
 - `profiles.phone` is private — read other users through the `public_profiles` view.
+- Paid boosts: sellers insert `listing_boosts` rows (always `pending`, price/duration set by DB);
+  only `admin_review_boost()` applies them. Sellers cannot write `boost_*_until` / `urgent` on listings.
 - Confirm in Lovable that a migration pushed via GitHub was actually applied to the live database.
 
 ## Server functions
@@ -39,8 +43,6 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
 
 ## Known issues / current priorities
 1. Home (`src/routes/index.tsx`) and catalog (`src/routes/catalog.tsx`) merge mock `LISTINGS` from `src/lib/mock-data.ts` with real DB listings; checkout, shop pages and shop dashboard still use mock data. Remove mocks before launch.
-2. `src/routes/boost-checkout.tsx` lets the client insert `listing_boosts` and set `boost_*_until` on its own listing — paid boosts are effectively free. Boosts must be pending until an admin approves the receipt.
-3. `analyzeBouquet` (`src/lib/analyze-bouquet.functions.ts`) has no auth middleware — anyone can spend AI credits.
-4. Listings never expire; bouquets should expire after ~72h.
-5. Auth is email + password only; phone/Telegram login is wanted.
-6. No PWA yet (manifest, icons, service worker, web push).
+   Mock listing ids are not UUIDs, so deal buttons on them fail — keep that in mind for demos.
+2. Listings never expire; bouquets should expire after ~72h. The `urgent` boost never expires either.
+3. Auth is email + password only; phone/Telegram login is wanted.
