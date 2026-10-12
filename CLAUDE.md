@@ -41,6 +41,13 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
 - `supabaseAdmin` (service role, bypasses RLS) only via dynamic import inside a handler, and only after an explicit permission check.
 - Validate inputs in `.inputValidator` (zod is available).
 
+## PWA
+- `public/manifest.webmanifest`, `public/icons/*` (placeholder "re" icons), `public/offline.html`, `public/sw.js`.
+- `src/lib/pwa.ts` registers the service worker only on the published site — never in dev or the Lovable
+  preview iframe (it would serve stale builds there). HTML is never cached (SSR); `/assets/*` and Supabase
+  Storage images are. Bump `VERSION` in `sw.js` when changing caching rules.
+- Install banner: `src/components/marketplace/InstallPrompt.tsx` (rendered by `AppLayout`).
+
 ## Known issues / current priorities
 1. Home (`src/routes/index.tsx`) and catalog (`src/routes/catalog.tsx`) merge mock `LISTINGS` from `src/lib/mock-data.ts` with real DB listings; checkout, shop pages and shop dashboard still use mock data. Remove mocks before launch.
    Mock listing ids are not UUIDs, so deal buttons on them fail — keep that in mind for demos.

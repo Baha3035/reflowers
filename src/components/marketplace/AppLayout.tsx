@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadMessages } from "@/hooks/use-unread-messages";
+import { InstallPrompt } from "@/components/marketplace/InstallPrompt";
 
 export function AppLayout({ children, hideBottomNav = false }: { children: ReactNode; hideBottomNav?: boolean }) {
   // Global unread tracker + realtime notifications (no-op when signed out).
@@ -17,6 +18,7 @@ export function AppLayout({ children, hideBottomNav = false }: { children: React
       <TopHeader />
       <main className="min-w-0 max-w-full overflow-x-hidden">{children}</main>
       {!hideBottomNav && <BottomNav />}
+      <InstallPrompt aboveBottomNav={!hideBottomNav} />
     </div>
   );
 }

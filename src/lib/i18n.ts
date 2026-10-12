@@ -120,6 +120,11 @@ const dict = {
     "fav.similar": "Похожие рекомендации",
     "card.buy": "Купить",
     "card.urgent": "Срочно",
+    "pwa.installTitle": "Установите ReFlowers",
+    "pwa.installDesc": "Открывайте букеты в один тап и получайте уведомления о сделках.",
+    "pwa.installIos": "Нажмите «Поделиться», затем «На экран „Домой“».",
+    "pwa.install": "Установить",
+    "pwa.later": "Не сейчас",
   },
   ky: {
     back: "Артка",
@@ -240,6 +245,11 @@ const dict = {
     "fav.similar": "Окшош сунуштар",
     "card.buy": "Сатып алуу",
     "card.urgent": "Тез",
+    "pwa.installTitle": "ReFlowers'ти орнотуңуз",
+    "pwa.installDesc": "Гүлдөрдү бир басуу менен ачып, бүтүмдөр тууралуу билдирүү алыңыз.",
+    "pwa.installIos": "«Бөлүшүү» баскычын басып, «Башкы экранга» тандаңыз.",
+    "pwa.install": "Орнотуу",
+    "pwa.later": "Азыр эмес",
   },
   en: {
     back: "Back",
@@ -360,6 +370,11 @@ const dict = {
     "fav.similar": "You might also like",
     "card.buy": "Buy",
     "card.urgent": "Urgent",
+    "pwa.installTitle": "Install ReFlowers",
+    "pwa.installDesc": "Open bouquets in one tap and get deal notifications.",
+    "pwa.installIos": "Tap Share, then “Add to Home Screen”.",
+    "pwa.install": "Install",
+    "pwa.later": "Not now",
   },
 } as const;
 
