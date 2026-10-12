@@ -77,7 +77,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const signOut = useCallback(async () => { await supabase.auth.signOut(); }, []);
+  const signOut = useCallback(async () => {
+    const { forgetPushSubscription } = await import("./push-client");
+    await forgetPushSubscription();
+    await supabase.auth.signOut();
+  }, []);
 
   const t = useCallback((key: TKey) => DICT[language][key] ?? DICT.ru[key] ?? key, [language]);
   const value = useMemo(() => ({

@@ -48,6 +48,18 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
   Storage images are. Bump `VERSION` in `sw.js` when changing caching rules.
 - Install banner: `src/components/marketplace/InstallPrompt.tsx` (rendered by `AppLayout`).
 
+## Push notifications
+- Triggers fill `push_outbox`: every `notifications` row and every chat message (to the other party).
+- `src/lib/push.server.ts` sends pending rows (WebCrypto Web Push in `web-push.server.ts`, no Node deps)
+  and drops rows older than 1h. It runs after deal events (`deals.functions.ts`), after chat messages
+  and admin boost reviews (client calls `flushPush`). Anything new that creates notifications must
+  trigger a flush too.
+- Devices: `push_subscriptions` (written only by the server, upsert by endpoint). UI: `PushToggle` on
+  `/notifications`. Sign-out removes this device's subscription.
+- Secrets in Lovable Cloud: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+  (generate with `node scripts/generate-vapid-keys.mjs`). Without them push is simply off.
+- iPhone: push works only after "Add to Home Screen" (iOS 16.4+).
+
 ## Known issues / current priorities
 1. Home (`src/routes/index.tsx`) and catalog (`src/routes/catalog.tsx`) merge mock `LISTINGS` from `src/lib/mock-data.ts` with real DB listings; checkout, shop pages and shop dashboard still use mock data. Remove mocks before launch.
    Mock listing ids are not UUIDs, so deal buttons on them fail — keep that in mind for demos.

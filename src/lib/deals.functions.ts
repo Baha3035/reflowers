@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Ctx = { supabase: any; userId: string };
@@ -22,7 +22,14 @@ async function logEvent(ctx: Ctx, orderId: string, event_type: string, payload: 
     .from("deal_events")
     .insert({ order_id: orderId, actor_id: ctx.userId, event_type, payload });
   if (error) throw new Error(error.message);
+  // The deal_events trigger queued a notification for the other party; push it now.
+  await dispatchPush();
 }
+
+const dispatchPush = createServerOnlyFn(async () => {
+  const { dispatchPendingPushSafe } = await import("./push.server");
+  await dispatchPendingPushSafe();
+});
 
 export const createDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -275,5 +282,6 @@ export const adminCancelDeal = createServerFn({ method: "POST" })
       _actor: ctx.userId,
     });
     if (error) throw new Error(error.message);
+    await dispatchPush();
     return { ok: true };
   });

@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteUserAsAdmin, getUserEmails, getUserStats } from "@/lib/admin.functions";
 import { adminCancelDeal } from "@/lib/deals.functions";
+import { flushPush } from "@/lib/push.functions";
 import { useEffect, useState } from "react";
 import { ShieldCheck, Users, Package, ShoppingBag, Store, Trash2, User as UserIcon, TrendingUp, ChevronDown, ChevronUp, Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -140,6 +141,7 @@ function AdminPage() {
     mutationFn: async (v: { id: string; approve: boolean }) => {
       const { error } = await supabase.rpc("admin_review_boost", { _boost_id: v.id, _approve: v.approve });
       if (error) throw error;
+      await flushPush().catch(() => {});
     },
     onSuccess: (_d, v) => {
       toast.success(v.approve ? "Продвижение активировано" : "Продвижение отклонено");

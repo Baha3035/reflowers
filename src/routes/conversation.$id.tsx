@@ -9,6 +9,7 @@ import { Send, User, ImagePlus, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeBouquet } from "@/lib/analyze-bouquet.functions";
+import { flushPush } from "@/lib/push.functions";
 import { DealCard } from "@/components/marketplace/DealCard";
 import { SafeImagePreview } from "@/components/marketplace/SafeAttachment";
 
@@ -136,6 +137,7 @@ function ConversationPage() {
         .from("messages")
         .insert({ conversation_id: id, sender_id: user.id, body });
       if (error) throw error;
+      flushPush().catch(() => {});
       setText("");
       qc.invalidateQueries({ queryKey: ["messages", id] });
       qc.invalidateQueries({ queryKey: ["conversations", user.id] });
@@ -187,6 +189,7 @@ function ConversationPage() {
           meta: { url: signed.signedUrl, path } as never,
         });
       if (error) throw error;
+      flushPush().catch(() => {});
       qc.invalidateQueries({ queryKey: ["messages", id] });
       qc.invalidateQueries({ queryKey: ["conversations", user.id] });
     } catch (err) {

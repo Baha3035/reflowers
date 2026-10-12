@@ -547,6 +547,72 @@ export type Database = {
         }
         Relationships: []
       }
+      push_outbox: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          sent_at: string | null
+          tag: string | null
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          tag?: string | null
+          title: string
+          url?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          tag?: string | null
+          title?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_success_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_success_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
