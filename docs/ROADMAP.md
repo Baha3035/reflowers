@@ -10,7 +10,7 @@ Every item is a GitHub issue; the issue is the source of truth for scope and sta
 
 ## Done (pending merge)
 - PWA (manifest, service worker, offline page, install banner) + web push — PR #1, with the fixes from testing.
-- Launch fixes (PR stacked on #1):
+- Launch fixes — PR #24 (stacked on #1):
   - removed all mock listings, shops, reviews and fake trust badges
   - 24h listing expiry plus extend
   - link previews for listings, and a working Share button

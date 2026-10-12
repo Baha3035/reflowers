@@ -4,7 +4,7 @@ Things only the project owner can do: accounts, paid settings, secrets. Agents: 
 and in a GitHub issue labelled `owner-action`. Don't mark them done yourself.
 
 ## Now (launch): issue #2, #3
-1. **Merge PR #1**, then the launch-fixes PR stacked on it. Merging to `main` syncs to Lovable.
+1. **Merge PR #1**, then PR #24 (stacked on it). Merging to `main` syncs to Lovable.
 2. **In Lovable, check that the migrations ran** on the live database:
    - `20261012090000_boost_review_and_ai_usage.sql`
    - `20261012100000_push_notifications.sql`
