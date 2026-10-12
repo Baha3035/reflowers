@@ -37,7 +37,7 @@ function Notifications() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  useEffect(() => { if (!authLoading && !user) navigate({ to: "/auth" }); }, [user, authLoading, navigate]);
+  useEffect(() => { if (!authLoading && !user) navigate({ to: "/auth", search: { redirect: "/notifications" } }); }, [user, authLoading, navigate]);
 
   const notifs = useQuery({
     queryKey: ["notifications", user?.id],

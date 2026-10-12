@@ -142,7 +142,7 @@ export function DealCard({ conversationId }: { conversationId: string }) {
     enabled: !!order?.seller_id,
     queryFn: async () => {
       const [{ data: prof }, { count }] = await Promise.all([
-        supabase.from("profiles").select("verified, reviews_count, rating").eq("id", order!.seller_id).maybeSingle(),
+        supabase.from("public_profiles").select("verified, reviews_count, rating").eq("id", order!.seller_id).maybeSingle(),
         supabase.from("orders").select("id", { count: "exact", head: true }).eq("seller_id", order!.seller_id).eq("deal_status", "completed"),
       ]);
       return { verified: !!prof?.verified, reviewsCount: prof?.reviews_count ?? 0, rating: prof?.rating ?? 0, completed: count ?? 0 };
