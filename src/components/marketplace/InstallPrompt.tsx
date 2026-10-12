@@ -22,37 +22,38 @@ function recentlyDismissed() {
   }
 }
 
+// beforeinstallprompt fires once per page load, but every route mounts its own AppLayout
+// (and so its own InstallPrompt). Keep the event and the load time at module level so the
+// banner survives client-side navigation.
+let savedPrompt: BeforeInstallPromptEvent | null = null;
+const loadedAt = Date.now();
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    savedPrompt = e as BeforeInstallPromptEvent;
+    window.dispatchEvent(new Event("rf-installable"));
+  });
+}
+
 // "Add to home screen" banner: Chrome/Android uses the native prompt, iOS Safari gets
 // instructions (it has no install API). Hidden once installed or for 14 days after "Not now".
 export function InstallPrompt({ aboveBottomNav = true }: { aboveBottomNav?: boolean }) {
   const { t } = useApp();
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [mode, setMode] = useState<"native" | "ios" | null>(null);
 
   useEffect(() => {
     if (isStandalone() || recentlyDismissed()) return;
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BeforeInstallPromptEvent);
+    const show = () => setMode(savedPrompt ? "native" : isIos() ? "ios" : null);
+    const timer = window.setTimeout(show, Math.max(0, loadedAt + SHOW_AFTER_MS - Date.now()));
+    const onInstallable = () => {
+      if (Date.now() - loadedAt >= SHOW_AFTER_MS) show();
     };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-
-    const timer = window.setTimeout(() => {
-      if (isIos()) setMode("ios");
-    }, SHOW_AFTER_MS);
-
+    window.addEventListener("rf-installable", onInstallable);
     return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
       window.clearTimeout(timer);
+      window.removeEventListener("rf-installable", onInstallable);
     };
   }, []);
-
-  useEffect(() => {
-    if (!deferred) return;
-    const timer = window.setTimeout(() => setMode("native"), SHOW_AFTER_MS);
-    return () => window.clearTimeout(timer);
-  }, [deferred]);
 
   const dismiss = () => {
     try {
@@ -64,10 +65,10 @@ export function InstallPrompt({ aboveBottomNav = true }: { aboveBottomNav?: bool
   };
 
   const install = async () => {
-    if (!deferred) return;
-    await deferred.prompt();
-    await deferred.userChoice.catch(() => null);
-    setDeferred(null);
+    if (!savedPrompt) return;
+    await savedPrompt.prompt();
+    await savedPrompt.userChoice.catch(() => null);
+    savedPrompt = null;
     setMode(null);
   };
 

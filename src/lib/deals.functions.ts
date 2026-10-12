@@ -94,16 +94,17 @@ export const createDeal = createServerFn({ method: "POST" })
       .single();
     if (oe) throw new Error(oe.message);
 
-    await logEvent(ctx, newOrder.id, "buyer_requested", { price: listing.price });
-
     // Send a buyer message into the conversation so the seller sees the request
     // in their chat list (bumps last_message_at) and gets a realtime notification.
+    // Inserted before logEvent so its push goes out in the same dispatch.
     await ctx.supabase.from("messages").insert({
       conversation_id: convId,
       sender_id: ctx.userId,
       kind: "text",
       body: "🛒 Хочу купить этот букет — открыл сделку.",
     });
+
+    await logEvent(ctx, newOrder.id, "buyer_requested", { price: listing.price });
 
     return { order_id: newOrder.id, conversation_id: convId };
   });

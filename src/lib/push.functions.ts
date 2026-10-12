@@ -3,7 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // The server POSTs to subscription endpoints, so only accept real browser push services.
 const PUSH_HOSTS = [
-  /^fcm\.googleapis\.com$/,
+  /(^|\.)googleapis\.com$/,
+  /(^|\.)google\.com$/,
   /(^|\.)push\.services\.mozilla\.com$/,
   /(^|\.)push\.apple\.com$/,
   /(^|\.)notify\.windows\.com$/,

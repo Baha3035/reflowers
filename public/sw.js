@@ -2,7 +2,7 @@
 // Pages are rendered on the server, so HTML is never cached: navigations always go to the
 // network and fall back to /offline.html. Hashed build assets and bouquet photos are cached.
 
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `rf-static-${VERSION}`;
 const IMAGE_CACHE = `rf-images-${VERSION}`;
 const MAX_IMAGES = 150;
@@ -24,6 +24,17 @@ self.addEventListener("activate", (event) => {
     })(),
   );
 });
+
+// The host answers /offline.html with a redirect to /offline, and a redirected response
+// can't be used for a navigation, so serve the cached page as a plain 200.
+async function offlinePage() {
+  const res = await caches.match("/offline.html");
+  if (!res) return Response.error();
+  return new Response(await res.blob(), {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+}
 
 function isSupabaseImage(url) {
   return url.hostname.endsWith(".supabase.co") && url.pathname.startsWith("/storage/v1/object/");
@@ -64,7 +75,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/offline.html")));
+    event.respondWith(fetch(request).catch(offlinePage));
     return;
   }
 
