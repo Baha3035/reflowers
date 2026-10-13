@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_usage: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -119,6 +140,9 @@ export type Database = {
           listing_id: string
           price: number
           receipt_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
           user_id: string
         }
         Insert: {
@@ -129,6 +153,9 @@ export type Database = {
           listing_id: string
           price: number
           receipt_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           user_id: string
         }
         Update: {
@@ -139,6 +166,9 @@ export type Database = {
           listing_id?: string
           price?: number
           receipt_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: [
@@ -517,6 +547,72 @@ export type Database = {
         }
         Relationships: []
       }
+      push_outbox: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          sent_at: string | null
+          tag: string | null
+          title: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          tag?: string | null
+          title: string
+          url?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          tag?: string | null
+          title?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_success_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_success_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           created_at: string
@@ -689,6 +785,18 @@ export type Database = {
       admin_cancel_deal: {
         Args: { _actor: string; _order_id: string; _reason: string }
         Returns: undefined
+      }
+      admin_review_boost: {
+        Args: { _approve: boolean; _boost_id: string }
+        Returns: undefined
+      }
+      boost_hours: {
+        Args: { _kind: Database["public"]["Enums"]["boost_kind"] }
+        Returns: number
+      }
+      boost_price: {
+        Args: { _kind: Database["public"]["Enums"]["boost_kind"] }
+        Returns: number
       }
     }
     Enums: {

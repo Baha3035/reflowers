@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AppProvider } from "../lib/store";
 import { Toaster } from "@/components/ui/sonner";
+import { registerServiceWorker } from "../lib/pwa";
 
 function NotFoundComponent() {
   return (
@@ -82,6 +83,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "ReFlowers — маркетплейс цветов в Бишкеке" },
       { name: "description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов Бишкека." },
       { name: "author", content: "ReFlowers" },
+      { name: "theme-color", content: "#00663a" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "ReFlowers" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { property: "og:title", content: "ReFlowers — маркетплейс цветов в Бишкеке" },
       { property: "og:description", content: "Покупайте букеты дешевле, продавайте ненужные цветы или заказывайте новые у проверенных магазинов Бишкека." },
       { property: "og:type", content: "website" },
@@ -98,6 +104,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -122,6 +130,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

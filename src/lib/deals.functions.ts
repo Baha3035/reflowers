@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type Ctx = { supabase: any; userId: string };
@@ -22,7 +22,14 @@ async function logEvent(ctx: Ctx, orderId: string, event_type: string, payload: 
     .from("deal_events")
     .insert({ order_id: orderId, actor_id: ctx.userId, event_type, payload });
   if (error) throw new Error(error.message);
+  // The deal_events trigger queued a notification for the other party; push it now.
+  await dispatchPush();
 }
+
+const dispatchPush = createServerOnlyFn(async () => {
+  const { dispatchPendingPushSafe } = await import("./push.server");
+  await dispatchPendingPushSafe();
+});
 
 export const createDeal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -87,16 +94,17 @@ export const createDeal = createServerFn({ method: "POST" })
       .single();
     if (oe) throw new Error(oe.message);
 
-    await logEvent(ctx, newOrder.id, "buyer_requested", { price: listing.price });
-
     // Send a buyer message into the conversation so the seller sees the request
     // in their chat list (bumps last_message_at) and gets a realtime notification.
+    // Inserted before logEvent so its push goes out in the same dispatch.
     await ctx.supabase.from("messages").insert({
       conversation_id: convId,
       sender_id: ctx.userId,
       kind: "text",
       body: "🛒 Хочу купить этот букет — открыл сделку.",
     });
+
+    await logEvent(ctx, newOrder.id, "buyer_requested", { price: listing.price });
 
     return { order_id: newOrder.id, conversation_id: convId };
   });
@@ -275,5 +283,6 @@ export const adminCancelDeal = createServerFn({ method: "POST" })
       _actor: ctx.userId,
     });
     if (error) throw new Error(error.message);
+    await dispatchPush();
     return { ok: true };
   });

@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { deleteUserAsAdmin, getUserEmails, getUserStats } from "@/lib/admin.functions";
 import { adminCancelDeal } from "@/lib/deals.functions";
+import { flushPush } from "@/lib/push.functions";
 import { useEffect, useState } from "react";
 import { ShieldCheck, Users, Package, ShoppingBag, Store, Trash2, User as UserIcon, TrendingUp, ChevronDown, ChevronUp, Receipt } from "lucide-react";
 import { toast } from "sonner";
@@ -121,12 +122,13 @@ function AdminPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("listing_boosts")
-        .select("id, listing_id, user_id, kind, price, expires_at, created_at, receipt_url")
+        .select("id, listing_id, user_id, kind, price, expires_at, created_at, receipt_url, status")
         .order("created_at", { ascending: false })
         .limit(200);
       return (data ?? []) as Array<{
         id: string; listing_id: string; user_id: string; kind: string;
         price: number; expires_at: string; created_at: string; receipt_url: string | null;
+        status: string;
       }>;
     },
   });
@@ -134,6 +136,20 @@ function AdminPage() {
   const [showAllUsers, setShowAllUsers] = useState(false);
   const [showAllOrders, setShowAllOrders] = useState(false);
   const [showAllBoosts, setShowAllBoosts] = useState(false);
+
+  const reviewBoostMutation = useMutation({
+    mutationFn: async (v: { id: string; approve: boolean }) => {
+      const { error } = await supabase.rpc("admin_review_boost", { _boost_id: v.id, _approve: v.approve });
+      if (error) throw error;
+      await flushPush().catch(() => {});
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.approve ? "Продвижение активировано" : "Продвижение отклонено");
+      qc.invalidateQueries({ queryKey: ["admin-boosts"] });
+      qc.invalidateQueries({ queryKey: ["db-listings"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Не удалось обновить"),
+  });
 
   const cancelDealFn = useServerFn(adminCancelDeal);
   const cancelDealMutation = useMutation({
@@ -177,8 +193,11 @@ function AdminPage() {
   const boostKindLabel: Record<string, string> = {
     bump: "Поднять", highlight: "Выделить цветом", top: "В топ", urgent: "Успейте купить сегодня",
   };
-  const boostRows = boosts.data ?? [];
-  const boostRevenue = boostRows.reduce((s, b) => s + (b.price ?? 0), 0);
+  const boostStatusRank: Record<string, number> = { pending: 0, approved: 1, rejected: 2 };
+  const boostRows = [...(boosts.data ?? [])].sort((a, b) => (boostStatusRank[a.status] ?? 3) - (boostStatusRank[b.status] ?? 3));
+  const approvedBoosts = boostRows.filter(b => b.status === "approved");
+  const pendingBoosts = boostRows.filter(b => b.status === "pending").length;
+  const boostRevenue = approvedBoosts.reduce((s, b) => s + (b.price ?? 0), 0);
   const listingsById = new Map((listings.data ?? []).map(l => [l.id, l]));
 
   const profilesAll = profiles.data ?? [];
@@ -200,7 +219,7 @@ function AdminPage() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat icon={<Users className="h-4 w-4" />} label="Участников" value={totalUsers} />
           <Stat icon={<Store className="h-4 w-4" />} label="Магазинов" value={totalShops} />
-          <Stat icon={<TrendingUp className="h-4 w-4" />} label="Оплат за продвижение" value={`${boostsAll.length} · ${boostRevenue.toLocaleString()} с`} />
+          <Stat icon={<TrendingUp className="h-4 w-4" />} label={pendingBoosts ? `Продвижение · ждут проверки: ${pendingBoosts}` : "Оплат за продвижение"} value={`${approvedBoosts.length} · ${boostRevenue.toLocaleString()} с`} />
           <Stat icon={<ShoppingBag className="h-4 w-4" />} label="Сделок активн./завершён." value={`${activeDeals} / ${completedDeals}`} />
         </div>
 
@@ -223,14 +242,15 @@ function AdminPage() {
                   <th className="p-3 text-left">Сумма</th>
                   <th className="p-3 text-left">Действует до</th>
                   <th className="p-3 text-left">Дата</th>
-                  <th className="p-3 text-right">Чек</th>
+                  <th className="p-3 text-left">Чек</th>
+                  <th className="p-3 text-right">Статус</th>
                 </tr>
               </thead>
               <tbody>
                 {boostsShown.map(b => {
                   const l = listingsById.get(b.listing_id);
                   const payer = profilesAll.find(p => p.id === b.user_id);
-                  const active = new Date(b.expires_at).getTime() > Date.now();
+                  const active = b.status === "approved" && new Date(b.expires_at).getTime() > Date.now();
                   return (
                     <tr key={b.id} className="border-t border-border/60">
                       <td className="p-3 text-xs">
@@ -245,9 +265,9 @@ function AdminPage() {
                       </td>
                       <td className="p-3 text-xs">{payer?.shop_name || payer?.display_name || emails.data?.[b.user_id] || b.user_id.slice(0, 8)}</td>
                       <td className="p-3 text-xs font-medium">{b.price} сом</td>
-                      <td className="p-3 text-xs text-muted-foreground">{new Date(b.expires_at).toLocaleString()}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{b.status === "approved" ? new Date(b.expires_at).toLocaleString() : "—"}</td>
                       <td className="p-3 text-xs text-muted-foreground">{new Date(b.created_at).toLocaleString()}</td>
-                      <td className="p-3 text-right">
+                      <td className="p-3">
                         {b.receipt_url ? (
                           <a href={b.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                             <Receipt className="h-3.5 w-3.5" /> Открыть
@@ -256,11 +276,35 @@ function AdminPage() {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
+                      <td className="p-3 text-right">
+                        {b.status === "pending" ? (
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              onClick={() => reviewBoostMutation.mutate({ id: b.id, approve: true })}
+                              disabled={reviewBoostMutation.isPending}
+                              className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              Подтвердить
+                            </button>
+                            <button
+                              onClick={() => reviewBoostMutation.mutate({ id: b.id, approve: false })}
+                              disabled={reviewBoostMutation.isPending}
+                              className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground hover:text-destructive disabled:opacity-50"
+                            >
+                              Отклонить
+                            </button>
+                          </div>
+                        ) : (
+                          <span className={`text-xs ${b.status === "approved" ? "text-primary" : "text-muted-foreground"}`}>
+                            {b.status === "approved" ? "Подтверждено" : "Отклонено"}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
                 {boostsAll.length === 0 && (
-                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={7}>Оплат за продвижение пока нет</td></tr>
+                  <tr><td className="p-6 text-center text-muted-foreground text-xs" colSpan={8}>Оплат за продвижение пока нет</td></tr>
                 )}
               </tbody>
             </table>

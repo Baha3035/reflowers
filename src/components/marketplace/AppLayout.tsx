@@ -3,20 +3,28 @@ import { Bell, Home, Grid3x3, Plus, MessageCircle, User, MapPin, ChevronDown, Se
 import { useApp, CITIES, type City } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUnreadMessages } from "@/hooks/use-unread-messages";
+import { InstallPrompt } from "@/components/marketplace/InstallPrompt";
+import { syncPushSubscription } from "@/lib/push-client";
 
 export function AppLayout({ children, hideBottomNav = false }: { children: ReactNode; hideBottomNav?: boolean }) {
   // Global unread tracker + realtime notifications (no-op when signed out).
   useUnreadMessages();
+  const { user } = useApp();
+  const userId = user?.id;
+  useEffect(() => {
+    if (userId) syncPushSubscription(userId);
+  }, [userId]);
   return (
     <div className={"min-h-dvh max-w-full overflow-x-hidden bg-background md:pb-0 " + (hideBottomNav ? "pb-0" : "pb-24")}>
       <TopHeader />
       <main className="min-w-0 max-w-full overflow-x-hidden">{children}</main>
       {!hideBottomNav && <BottomNav />}
+      <InstallPrompt aboveBottomNav={!hideBottomNav} />
     </div>
   );
 }

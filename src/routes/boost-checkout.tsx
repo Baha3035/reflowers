@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
-import { useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, TrendingUp, Palette, Crown, Flame, Loader2, Copy, Check } from "lucide-react";
@@ -28,7 +27,6 @@ export const Route = createFileRoute("/boost-checkout")({
 function BoostCheckout() {
   const { listing, kinds } = Route.useSearch();
   const { user } = useApp();
-  const qc = useQueryClient();
   const navigate = useNavigate();
   const [paying, setPaying] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -88,28 +86,11 @@ function BoostCheckout() {
         expires_at: new Date(now + b.hours * 3600_000).toISOString(),
         receipt_url: receipt,
       }));
+      // Price and duration are enforced by the database; the boost stays pending
+      // until an admin checks the receipt and approves it.
       const { error: be } = await supabase.from("listing_boosts").insert(rows);
       if (be) throw be;
-
-      // Apply boost flags on listing
-      const patch: {
-        boost_bump_until?: string;
-        boost_highlight_until?: string;
-        boost_top_until?: string;
-        urgent?: boolean;
-      } = {};
-      for (const b of items) {
-        const exp = new Date(now + b.hours * 3600_000).toISOString();
-        if (b.kind === "bump") patch.boost_bump_until = exp;
-        if (b.kind === "highlight") patch.boost_highlight_until = exp;
-        if (b.kind === "top") patch.boost_top_until = exp;
-        if (b.kind === "urgent") patch.urgent = true;
-      }
-      if (Object.keys(patch).length) {
-        await supabase.from("listings").update(patch).eq("id", listing);
-      }
-      await qc.invalidateQueries({ queryKey: ["db-listings"] });
-      toast.success("Чек получен — продвижение активировано!");
+      toast.success("Чек отправлен — продвижение включится после проверки оплаты");
       setTimeout(() => navigate({ to: "/catalog" }), 500);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Не удалось оплатить");
@@ -122,7 +103,7 @@ function BoostCheckout() {
     <AppLayout hideBottomNav>
       <div className="mx-auto max-w-xl px-4 py-6 pb-safe md:px-8">
         <h1 className="font-display text-2xl md:text-3xl">Оплата продвижения</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Услуги активируются сразу после оплаты.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Услуги включаются после того, как мы проверим оплату.</p>
 
         <div className="mt-5 space-y-2 rounded-3xl bg-card p-4 shadow-[var(--shadow-card)]">
           {items.map(b => {
@@ -202,7 +183,7 @@ function BoostCheckout() {
                 <ReceiptPreview url={receipt} title="Чек прикреплён" className="mt-2" />
               ) : (
                 <div className="mt-1.5 text-[11px] text-muted-foreground">
-                  Переведите сумму на указанные реквизиты и приложите скриншот/фото чека. Продвижение активируется после получения чека.
+                  Переведите сумму на указанные реквизиты и приложите скриншот/фото чека. Продвижение включится после проверки чека.
                 </div>
               )}
             </div>
@@ -214,7 +195,7 @@ function BoostCheckout() {
           </div>
 
           <Button size="lg" className="mt-3 w-full rounded-full" onClick={pay} disabled={paying || items.length === 0 || total === 0 || !receipt || uploading}>
-            {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : receipt ? `Активировать за ${total} сом` : "Прикрепите чек"}
+            {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : receipt ? `Отправить чек · ${total} сом` : "Прикрепите чек"}
           </Button>
           <Link to="/catalog" className="mt-2 block text-center text-xs text-muted-foreground hover:underline">
             Пропустить — опубликовать без продвижения

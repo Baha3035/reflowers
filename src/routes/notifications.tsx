@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { Bell } from "lucide-react";
+import { PushToggle } from "@/components/marketplace/PushToggle";
 
 export const Route = createFileRoute("/notifications")({
   head: () => ({ meta: [{ title: "Уведомления — ReFlowers" }] }),
@@ -80,6 +81,7 @@ function Notifications() {
     <AppLayout>
       <div className="mx-auto max-w-2xl px-4 py-6 md:px-8">
         <h1 className="font-display text-2xl">Уведомления</h1>
+        <PushToggle />
         {notifs.isLoading ? (
           <div className="mt-6 text-center text-sm text-muted-foreground">Загрузка…</div>
         ) : (notifs.data ?? []).length === 0 ? (
