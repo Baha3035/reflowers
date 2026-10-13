@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { analyzeBouquet } from "@/lib/analyze-bouquet.functions";
 import { flushPush } from "@/lib/push.functions";
+import { shrinkImage } from "@/lib/image";
 import { DealCard } from "@/components/marketplace/DealCard";
 import { SafeImagePreview } from "@/components/marketplace/SafeAttachment";
 
@@ -33,7 +34,7 @@ function ConversationPage() {
   const [photoError, setPhotoError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/auth" });
+    if (!authLoading && !user) navigate({ to: "/auth", search: { redirect: `/conversation/${id}` } });
   }, [user, authLoading, navigate]);
 
   const conv = useQuery({
@@ -149,13 +150,14 @@ function ConversationPage() {
     }
   }
 
-  async function sendPhoto(file: File) {
+  async function sendPhoto(original: File) {
     if (!user) return;
-    if (!file.type.startsWith("image/")) { toast.error("Нужен файл-изображение"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
+    if (!original.type.startsWith("image/")) { toast.error("Нужен файл-изображение"); return; }
     setUploadingPhoto(true);
     setPhotoError(null);
     try {
+      const file = await shrinkImage(original);
+      if (file.size > 10 * 1024 * 1024) { toast.error("Больше 10 МБ"); return; }
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
       const { error: upErr } = await supabase.storage.from("chat-photos").upload(path, file, {

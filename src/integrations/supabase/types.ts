@@ -192,6 +192,7 @@ export type Database = {
           created_at: string
           description: string | null
           district: string | null
+          expires_at: string
           favorites_count: number
           id: string
           images: string[]
@@ -214,6 +215,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           district?: string | null
+          expires_at?: string
           favorites_count?: number
           id?: string
           images?: string[]
@@ -236,6 +238,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           district?: string | null
+          expires_at?: string
           favorites_count?: number
           id?: string
           images?: string[]
@@ -501,6 +504,8 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           city: string | null
+          contact_call: boolean
+          contact_whatsapp: boolean
           created_at: string
           display_name: string | null
           district: string | null
@@ -510,6 +515,7 @@ export type Database = {
           reviews_count: number
           seller_type: Database["public"]["Enums"]["seller_type"]
           shop_name: string | null
+          telegram_username: string | null
           updated_at: string
           verified: boolean
         }
@@ -517,6 +523,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          contact_call?: boolean
+          contact_whatsapp?: boolean
           created_at?: string
           display_name?: string | null
           district?: string | null
@@ -526,6 +534,7 @@ export type Database = {
           reviews_count?: number
           seller_type?: Database["public"]["Enums"]["seller_type"]
           shop_name?: string | null
+          telegram_username?: string | null
           updated_at?: string
           verified?: boolean
         }
@@ -533,6 +542,8 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          contact_call?: boolean
+          contact_whatsapp?: boolean
           created_at?: string
           display_name?: string | null
           district?: string | null
@@ -542,6 +553,7 @@ export type Database = {
           reviews_count?: number
           seller_type?: Database["public"]["Enums"]["seller_type"]
           shop_name?: string | null
+          telegram_username?: string | null
           updated_at?: string
           verified?: boolean
         }
@@ -797,6 +809,17 @@ export type Database = {
       boost_price: {
         Args: { _kind: Database["public"]["Enums"]["boost_kind"] }
         Returns: number
+      }
+      extend_listing: { Args: { _listing_id: string }; Returns: string }
+      get_listing_contacts: {
+        Args: { _listing_id: string }
+        Returns: {
+          call: boolean
+          phone: string | null
+          telegram: boolean
+          telegram_username: string | null
+          whatsapp: boolean
+        }[]
       }
     }
     Enums: {

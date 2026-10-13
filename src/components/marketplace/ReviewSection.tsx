@@ -47,11 +47,11 @@ export function ReviewSection({ targetUserId }: { targetUserId: string }) {
     enabled: reviewerIds.length > 0,
     queryFn: async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("id, display_name, shop_name, seller_type, avatar_url")
         .in("id", reviewerIds);
       const map = new Map<string, ReviewerProfile>();
-      (data ?? []).forEach(p => map.set(p.id, p as ReviewerProfile));
+      (data ?? []).forEach(p => map.set(p.id ?? "", p as ReviewerProfile));
       return map;
     },
   });
