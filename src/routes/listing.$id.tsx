@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
-import { LISTINGS, REVIEWS, formatSom, getListing, getSeller } from "@/lib/mock-data";
+import { LISTINGS, REVIEWS, formatSom, getListing, getSeller, type Listing } from "@/lib/mock-data";
 import { mapDbListing } from "@/lib/db-listings";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/listing/$id")({
       ...(l ? [{ property: "og:image", content: l.image }] : []),
     ] };
   },
-  loader: async ({ params }) => {
+  loader: async ({ params }): Promise<{ listing: Listing }> => {
     const local = getListing(params.id);
     if (local) return { listing: local };
     if (/^[0-9a-f]{8}-/.test(params.id)) {
@@ -46,7 +46,7 @@ function NotFound() {
 }
 
 function ListingPage() {
-  const { listing } = Route.useLoaderData();
+  const { listing } = Route.useLoaderData() as { listing: Listing };
   const { t } = useApp();
   const isSellerUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.sellerId);
   const dbSeller = useQuery({
