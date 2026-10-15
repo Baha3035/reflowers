@@ -46,7 +46,7 @@ function NotFound() {
 }
 
 function ListingPage() {
-  const { listing } = Route.useLoaderData();
+  const { listing } = Route.useLoaderData() as { listing: Listing };
   const { t } = useApp();
   const isSellerUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.sellerId);
   const dbSeller = useQuery({
