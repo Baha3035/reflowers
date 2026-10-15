@@ -14,27 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      ai_usage: {
-        Row: {
-          created_at: string
-          id: string
-          kind: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          kind?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          kind?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       conversations: {
         Row: {
           buyer_id: string
@@ -140,9 +119,6 @@ export type Database = {
           listing_id: string
           price: number
           receipt_url: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
           user_id: string
         }
         Insert: {
@@ -153,9 +129,6 @@ export type Database = {
           listing_id: string
           price: number
           receipt_url?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
           user_id: string
         }
         Update: {
@@ -166,9 +139,6 @@ export type Database = {
           listing_id?: string
           price?: number
           receipt_url?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
           user_id?: string
         }
         Relationships: [
@@ -547,72 +517,6 @@ export type Database = {
         }
         Relationships: []
       }
-      push_outbox: {
-        Row: {
-          body: string | null
-          created_at: string
-          id: string
-          sent_at: string | null
-          tag: string | null
-          title: string
-          url: string
-          user_id: string
-        }
-        Insert: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          sent_at?: string | null
-          tag?: string | null
-          title: string
-          url?: string
-          user_id: string
-        }
-        Update: {
-          body?: string | null
-          created_at?: string
-          id?: string
-          sent_at?: string | null
-          tag?: string | null
-          title?: string
-          url?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      push_subscriptions: {
-        Row: {
-          auth: string
-          created_at: string
-          endpoint: string
-          id: string
-          last_success_at: string | null
-          p256dh: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          auth: string
-          created_at?: string
-          endpoint: string
-          id?: string
-          last_success_at?: string | null
-          p256dh: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          auth?: string
-          created_at?: string
-          endpoint?: string
-          id?: string
-          last_success_at?: string | null
-          p256dh?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       reports: {
         Row: {
           created_at: string
@@ -786,18 +690,6 @@ export type Database = {
         Args: { _actor: string; _order_id: string; _reason: string }
         Returns: undefined
       }
-      admin_review_boost: {
-        Args: { _approve: boolean; _boost_id: string }
-        Returns: undefined
-      }
-      boost_hours: {
-        Args: { _kind: Database["public"]["Enums"]["boost_kind"] }
-        Returns: number
-      }
-      boost_price: {
-        Args: { _kind: Database["public"]["Enums"]["boost_kind"] }
-        Returns: number
-      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -847,12 +739,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -876,11 +768,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -901,11 +793,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -926,11 +818,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -943,11 +835,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
