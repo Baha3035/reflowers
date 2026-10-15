@@ -2,6 +2,20 @@
 
 Update at the end of every session: what changed, what's open, what's next. Newest first.
 
+## 2026-10-15
+- **Owner decisions:**
+  - no public Telegram channel (#6 closed); the bot is private only
+  - reviews are public
+  - moderation follows the strike model (`docs/research/moderation-policies.md` §4)
+  - no auctions in v1
+  - free posting, revenue from promotion only
+  - the brand will change (#25)
+- **Added to #24:**
+  - `20261015090000_public_reviews.sql` (closes #11)
+  - `scripts/check-live-db.mjs`: read-only check of which migrations reached the live DB. On 2026-10-15 the live DB had **none** of the 4 new migrations, as expected before merge.
+- `docs/OWNER_ACTIONS.md` now has step-by-step instructions for applying and verifying migrations and adding secrets.
+- **Waiting on the owner:** #25 (name), then #2 (merge, migrations, secrets, publish), #3, and seeding the feed.
+
 ## 2026-10-12
 
 **Live:** https://reflowers.lovable.app (Lovable hosting).
