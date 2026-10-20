@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout, SearchBar } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
-import { ShopCard } from "@/components/marketplace/ShopCard";
 import { Button } from "@/components/ui/button";
-import { DISTRICTS, LISTINGS, SELLERS, IMAGES, boostRank } from "@/lib/mock-data";
+import { IMAGES, boostRank } from "@/lib/marketplace";
 import { useDbListings } from "@/lib/db-listings";
 import { useApp } from "@/lib/store";
 import { ArrowRight, Leaf, Sparkles, ShoppingBag, Plus, Flame } from "lucide-react";
@@ -13,12 +12,10 @@ export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
   const { sellerMode, setSellerMode, t } = useApp();
-  const { data: dbListings = [] } = useDbListings();
-  const all = [...dbListings, ...LISTINGS].sort((a, b) => boostRank(a) - boostRank(b));
+  const { data: dbListings = [], isLoading } = useDbListings();
+  const all = [...dbListings].sort((a, b) => boostRank(a) - boostRank(b));
   const listings = sellerMode === "private" ? all.filter(l => l.sellerType !== "shop") : all.filter(l => l.sellerType === "shop");
-  const nearby = all.slice(0, 8);
   const urgent = all.filter(l => l.urgent).slice(0, 4);
-  const shops = SELLERS.filter(s => s.type === "shop");
 
   return (
     <AppLayout>
@@ -86,33 +83,22 @@ function Home() {
 
       {/* Recommended */}
       <Section title={t("sec.recommended")} subtitle={sellerMode === "private" ? t("sec.recommendedSubP") : t("sec.recommendedSubS")} link="/catalog" viewAll={t("sec.viewAll")}>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-          {listings.slice(0, 8).map(l => <ListingCard key={l.id} listing={l} />)}
-        </div>
+        {listings.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+            {listings.slice(0, 8).map(l => <ListingCard key={l.id} listing={l} />)}
+          </div>
+        ) : !isLoading && (
+          <EmptyFeed shops={sellerMode === "shop"} />
+        )}
       </Section>
 
-      <Section title={t("sec.nearby")} subtitle={t("sec.nearbySub")}>
-        <div className="mb-3 flex gap-2 overflow-x-auto scrollbar-hide px-4 md:px-0">
-          {DISTRICTS.map(d => (
-            <span key={d} className="shrink-0 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-foreground/70">{d}</span>
-          ))}
-        </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-          {nearby.slice(0, 4).map(l => <ListingCard key={l.id} listing={l} />)}
-        </div>
-      </Section>
-
-      <Section title={t("sec.urgent")} subtitle={t("sec.urgentSub")} accent>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-          {urgent.map(l => <ListingCard key={l.id} listing={l} />)}
-        </div>
-      </Section>
-
-      <Section title={t("sec.shops")} subtitle={t("sec.shopsSub")}>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2 md:grid md:grid-cols-3 md:gap-5 md:px-0">
-          {shops.map(s => <ShopCard key={s.id} shop={s} />)}
-        </div>
-      </Section>
+      {urgent.length > 0 && (
+        <Section title={t("sec.urgent")} subtitle={t("sec.urgentSub")} accent>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+            {urgent.map(l => <ListingCard key={l.id} listing={l} />)}
+          </div>
+        </Section>
+      )}
 
       {/* Inspiration */}
       <section className="mx-auto mt-10 mb-12 max-w-7xl px-4 md:px-8">
@@ -133,6 +119,23 @@ function Home() {
         </div>
       </section>
     </AppLayout>
+  );
+}
+
+function EmptyFeed({ shops }: { shops: boolean }) {
+  return (
+    <div className="rounded-3xl bg-card p-8 text-center shadow-[var(--shadow-card)]">
+      <div className="text-4xl">💐</div>
+      <h3 className="mt-2 font-display text-lg">{shops ? "Магазины скоро появятся" : "Сейчас букетов нет"}</h3>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+        {shops
+          ? "Вы флорист? Зарегистрируйтесь как магазин и продавайте букеты со скидкой."
+          : "Объявления живут 24 часа. Подарили букет, а он вам не нужен? Продайте его за минуту."}
+      </p>
+      <Link to={shops ? "/shop-dashboard" : "/sell"} className="mt-4 inline-block">
+        <Button className="rounded-full">{shops ? "Подключить магазин" : "Продать букет"}</Button>
+      </Link>
+    </div>
   );
 }
 

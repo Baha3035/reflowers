@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
-import { LISTINGS } from "@/lib/mock-data";
+import { useDbListings, useListingsByIds } from "@/lib/db-listings";
 import { useApp } from "@/lib/store";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart } from "lucide-react";
 
 export const Route = createFileRoute("/favorites")({
   head: () => ({ meta: [{ title: "Избранное — ReFlowers" }] }),
@@ -12,8 +12,10 @@ export const Route = createFileRoute("/favorites")({
 
 function Favorites() {
   const { favorites, t } = useApp();
-  const saved = LISTINGS.filter(l => favorites.has(l.id));
-  const similar = LISTINGS.filter(l => !favorites.has(l.id)).slice(0, 4);
+  // Favourites are kept on this device (localStorage). Sold or expired bouquets drop out.
+  const { data: saved = [] } = useListingsByIds([...favorites]);
+  const { data: feed = [] } = useDbListings();
+  const similar = feed.filter(l => !favorites.has(l.id)).slice(0, 4);
 
   return (
     <AppLayout>
@@ -29,20 +31,20 @@ function Favorites() {
           </div>
         ) : (
           <>
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center gap-2 rounded-2xl bg-secondary p-3 text-sm text-secondary-foreground"><Sparkles className="h-4 w-4" /> Цена снижена на 500 сом — «Букет из 51 розы»</div>
-              <div className="flex items-center gap-2 rounded-2xl bg-destructive/10 p-3 text-sm text-destructive">⏰ Осталось 2 часа до завершения объявления</div>
-            </div>
             <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
               {saved.map(l => <ListingCard key={l.id} listing={l} />)}
             </div>
           </>
         )}
 
-        <h2 className="mt-10 font-display text-xl">{t("fav.similar")}</h2>
-        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-          {similar.map(l => <ListingCard key={l.id} listing={l} />)}
-        </div>
+        {similar.length > 0 && (
+          <>
+            <h2 className="mt-10 font-display text-xl">{t("fav.similar")}</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+              {similar.map(l => <ListingCard key={l.id} listing={l} />)}
+            </div>
+          </>
+        )}
       </div>
     </AppLayout>
   );

@@ -4,8 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
-import { mapDbListing } from "@/lib/db-listings";
-import { BadgeCheck, Bell, Check, ChevronRight, Globe, Heart, HelpCircle, LogOut, MapPin, Package, Settings, ShoppingBag, Star, Store, Trash2, User as UserIcon, Wallet } from "lucide-react";
+import { LISTING_COLUMNS, mapDbListing, type DbListing } from "@/lib/db-listings";
+import { contactSettingsToProfile } from "@/lib/contacts";
+import { ContactSettingsForm, EMPTY_CONTACTS, loadMyContacts } from "@/components/marketplace/SellerContacts";
+import { Button } from "@/components/ui/button";
+import { BadgeCheck, Bell, Check, Clock, Phone, ChevronRight, Globe, Heart, HelpCircle, LogOut, MapPin, Package, Settings, ShoppingBag, Star, Store, Trash2, User as UserIcon, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ListingCard } from "@/components/marketplace/ListingCard";
@@ -23,7 +26,7 @@ function Profile() {
   const [showSold, setShowSold] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/auth" });
+    if (!authLoading && !user) navigate({ to: "/auth", search: { redirect: "/profile" } });
   }, [user, authLoading, navigate]);
 
   const profile = useQuery({
@@ -45,11 +48,11 @@ function Profile() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("id, seller_id, title, description, price, original_price, category, condition, city, district, images, status, urgent, created_at")
+        .select(LISTING_COLUMNS)
         .eq("seller_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as DbListing[];
     },
   });
 
@@ -75,6 +78,36 @@ function Profile() {
     },
   });
 
+  const extendListing = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("extend_listing", { _listing_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Объявление продлено на 24 часа");
+      qc.invalidateQueries({ queryKey: ["my-listings", user?.id] });
+      qc.invalidateQueries({ queryKey: ["db-listings"] });
+    },
+    onError: (e: Error) =>
+      toast.error(e.message.includes("5 days") ? "Букету больше 5 дней — опубликуйте новое объявление" : e.message),
+  });
+
+  const [contacts, setContacts] = useState(EMPTY_CONTACTS);
+  const [showContacts, setShowContacts] = useState(false);
+  useEffect(() => {
+    if (user) loadMyContacts(user.id).then(setContacts);
+  }, [user]);
+  const saveContacts = useMutation({
+    mutationFn: async () => {
+      const check = contactSettingsToProfile(contacts);
+      if (!check.ok) throw new Error(check.error);
+      const { error } = await supabase.from("profiles").update(check.profile).eq("id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Контакты сохранены"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (authLoading || !user) {
     return <AppLayout><div className="mx-auto max-w-md p-10 text-center text-sm text-muted-foreground">Загрузка…</div></AppLayout>;
   }
@@ -84,7 +117,10 @@ function Profile() {
   const displayName = (isShop ? p?.shop_name : p?.display_name) || user.email?.split("@")[0] || "Профиль";
   const initial = displayName.charAt(0).toUpperCase();
   const activeAll = myListings.data ?? [];
-  const active = activeAll.filter(l => l.status === "active");
+  const now = Date.now();
+  const active = activeAll.filter(l => l.status === "active" && new Date(l.expires_at).getTime() > now);
+  // Expired: past expires_at but not sold/hidden. Can be extended while the bouquet is under 5 days old.
+  const expired = activeAll.filter(l => (l.status === "active" || l.status === "expired") && new Date(l.expires_at).getTime() <= now);
   const soldListings = activeAll.filter(l => l.status === "sold");
   const sold = soldListings.length;
   const created = p?.created_at ? new Date(p.created_at) : new Date(user.created_at);
@@ -139,7 +175,7 @@ function Profile() {
           <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
             {active.map(l => (
               <div key={l.id} className="flex flex-col gap-2">
-                <ListingCard listing={mapDbListing(l as never)} />
+                <ListingCard listing={mapDbListing(l)} />
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -164,6 +200,39 @@ function Profile() {
           </div>
         )}
 
+        {expired.length > 0 && (
+          <>
+            <h2 className="mt-8 font-display text-lg">Истекли</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Покупатели их больше не видят. Букет ещё свежий? Продлите на 24 часа.</p>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+              {expired.map(l => (
+                <div key={l.id} className="flex flex-col gap-2">
+                  <div className="opacity-60"><ListingCard listing={mapDbListing(l)} /></div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => extendListing.mutate(l.id)}
+                      disabled={extendListing.isPending}
+                      className="flex-1 inline-flex items-center justify-center gap-1 rounded-full bg-primary px-3 py-2 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                    >
+                      <Clock className="h-3.5 w-3.5" /> Продлить
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { if (confirm("Удалить объявление?")) removeListing.mutate(l.id); }}
+                      disabled={removeListing.isPending}
+                      className="inline-flex items-center justify-center gap-1 rounded-full bg-muted px-3 py-2 text-xs font-medium text-destructive disabled:opacity-50"
+                      aria-label="Удалить"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         <ReviewSection targetUserId={user.id} />
 
         <h2 className="mt-8 font-display text-lg">Настройки</h2>
@@ -178,7 +247,7 @@ function Profile() {
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                   {soldListings.map(l => (
                     <div key={l.id} className="flex flex-col gap-2">
-                      <ListingCard listing={mapDbListing(l as never)} />
+                      <ListingCard listing={mapDbListing(l)} />
                       <button
                         type="button"
                         onClick={() => { if (confirm("Удалить проданное объявление?")) removeListing.mutate(l.id); }}
@@ -191,6 +260,13 @@ function Profile() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+          <Row icon={Phone} label="Контакты для покупателей" onClick={() => setShowContacts(v => !v)} />
+          {showContacts && (
+            <div className="space-y-3 px-4 py-3">
+              <ContactSettingsForm value={contacts} onChange={setContacts} />
+              <Button size="sm" className="rounded-full" disabled={saveContacts.isPending} onClick={() => saveContacts.mutate()}>Сохранить</Button>
             </div>
           )}
           <Row icon={Heart} label="Избранное" to="/favorites" />

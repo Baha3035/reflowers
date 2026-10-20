@@ -18,7 +18,7 @@ function Messages() {
   const unread = useUnreadMessages();
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/auth" });
+    if (!authLoading && !user) navigate({ to: "/auth", search: { redirect: "/messages" } });
   }, [user, authLoading, navigate]);
 
   const convs = useQuery({

@@ -6,7 +6,10 @@ import { AppLayout } from "@/components/marketplace/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { DISTRICTS } from "@/lib/mock-data";
+import { DISTRICTS } from "@/lib/marketplace";
+import { shrinkImage } from "@/lib/image";
+import { contactSettingsToProfile } from "@/lib/contacts";
+import { ContactSettingsForm, EMPTY_CONTACTS, loadMyContacts } from "@/components/marketplace/SellerContacts";
 import { Camera, ChevronLeft, Sparkles, ChevronDown, TrendingUp, Palette, Crown, Flame, X, Loader2, AlertTriangle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -28,27 +31,38 @@ function Sell() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [price, setPrice] = useState("1900");
+  // No default price: if the AI estimate fails, the seller must type one rather than publish at a made-up 1900.
+  const [price, setPrice] = useState("");
   const [district, setDistrict] = useState("Центр");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [boosts, setBoosts] = useState<Record<string, boolean>>({});
   const analyzed = photos.length > 0;
   const [ai, setAi] = useState<BouquetAnalysis | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiFailed, setAiFailed] = useState(false);
+  const [contacts, setContacts] = useState(EMPTY_CONTACTS);
+  const [contactsLoaded, setContactsLoaded] = useState(false);
   const runAnalyze = useServerFn(analyzeBouquet);
   const [priceTouched, setPriceTouched] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
   const [descTouched, setDescTouched] = useState(false);
 
+  useEffect(() => {
+    if (!user || contactsLoaded) return;
+    loadMyContacts(user.id).then(c => { setContacts(c); setContactsLoaded(true); });
+  }, [user, contactsLoaded]);
+
   // Analyze whenever photos change
   useEffect(() => {
-    if (photos.length === 0) { setAi(null); return; }
+    if (photos.length === 0) { setAi(null); setAiFailed(false); return; }
     let cancelled = false;
     setAiLoading(true);
+    setAiFailed(false);
     runAnalyze({ data: { images: photos } })
       .then(res => {
         if (cancelled) return;
         setAi(res);
+        if (res.isBouquet && !res.priceMax) setAiFailed(true);
         if (res.isBouquet) {
           if (!titleTouched && res.title) setTitle(res.title);
           if (!descTouched && res.description) setDesc(res.description);
@@ -57,7 +71,7 @@ function Sell() {
           }
         }
       })
-      .catch(() => {})
+      .catch(() => { if (!cancelled) setAiFailed(true); })
       .finally(() => { if (!cancelled) setAiLoading(false); });
     return () => { cancelled = true; };
   }, [photos, runAnalyze, titleTouched, descTouched, priceTouched]);
@@ -66,7 +80,7 @@ function Sell() {
     if (!files || files.length === 0) return;
     if (!user) {
       toast.info("Войдите, чтобы загрузить фото");
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { redirect: "/sell" } });
       return;
     }
     const remaining = 6 - photos.length;
@@ -74,9 +88,10 @@ function Sell() {
     setUploading(true);
     try {
       const uploaded: string[] = [];
-      for (const file of chosen) {
-        if (!file.type.startsWith("image/")) continue;
-        if (file.size > 10 * 1024 * 1024) { toast.error(`${file.name}: больше 10 МБ`); continue; }
+      for (const original of chosen) {
+        if (!original.type.startsWith("image/")) continue;
+        const file = await shrinkImage(original);
+        if (file.size > 10 * 1024 * 1024) { toast.error(`${original.name}: больше 10 МБ`); continue; }
         const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
         const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
         const { error: upErr } = await supabase.storage.from("listing-photos").upload(path, file, {
@@ -103,15 +118,20 @@ function Sell() {
   ];
   const boostTotal = BOOSTS.filter(b => boosts[b.id]).reduce((s, b) => s + b.price, 0);
   const numPrice = Number(price) || 0;
+  const contactCheck = contactSettingsToProfile(contacts);
 
   const publish = async () => {
     if (!user) {
       toast.info("Войдите, чтобы опубликовать");
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { redirect: "/sell" } });
       return;
     }
+    if (numPrice <= 0) { toast.error("Укажите цену"); return; }
+    if (!contactCheck.ok) { toast.error(contactCheck.error); return; }
     setSubmitting(true);
     try {
+      const { error: profileError } = await supabase.from("profiles").update(contactCheck.profile).eq("id", user.id);
+      if (profileError) throw profileError;
       const { data: inserted, error } = await supabase.from("listings").insert({
         seller_id: user.id,
         title: title || "Свежий букет",
@@ -206,6 +226,10 @@ function Sell() {
                 <div className="mt-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-xs text-primary">
                   <Loader2 className="h-4 w-4 animate-spin" /> Умная оценка анализирует фото…
                 </div>
+              ) : aiFailed ? (
+                <div className="mt-3 rounded-2xl border border-border bg-muted p-3 text-[13px] text-foreground/80">
+                  Умная оценка сейчас недоступна — укажите цену и название сами.
+                </div>
               ) : ai && !ai.isBouquet ? (
                 <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-3">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-destructive"><AlertTriangle className="h-3.5 w-3.5" /> Похоже, это не букет цветов</div>
@@ -230,7 +254,7 @@ function Sell() {
           <div>
             <div className="mb-2 text-sm font-semibold">2. Ваша цена</div>
             <div className="flex items-center gap-2">
-              <Input value={price} onChange={e => { setPrice(e.target.value); setPriceTouched(true); }} type="number" className="text-lg font-semibold" />
+              <Input value={price} onChange={e => { setPrice(e.target.value); setPriceTouched(true); }} type="number" inputMode="numeric" min={1} placeholder="Например, 1500" className="text-lg font-semibold" />
               <span className="text-sm text-muted-foreground">сом</span>
             </div>
           </div>
@@ -243,6 +267,12 @@ function Sell() {
                 <button key={d} onClick={() => setDistrict(d)} className={cn("rounded-full border px-3 py-1.5 text-xs font-medium transition", district === d ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-foreground/80")}>{d}</button>
               ))}
             </div>
+          </div>
+
+          {/* Contacts */}
+          <div>
+            <div className="mb-2 text-sm font-semibold">4. Как с вами связаться</div>
+            <ContactSettingsForm value={contacts} onChange={setContacts} />
           </div>
 
           {/* Advanced (optional) */}
@@ -289,7 +319,7 @@ function Sell() {
           </div>
 
           <div className="rounded-2xl bg-accent p-2.5 text-[11px] text-accent-foreground">
-            Объявление активно 24 часа. Место встречи вы согласуете с покупателем в чате.
+            Объявление активно 24 часа — продлить можно в профиле, пока букет свежий. Место встречи согласуете с покупателем.
           </div>
         </div>
       </div>
@@ -299,9 +329,9 @@ function Sell() {
         <div className="mx-auto flex max-w-2xl items-center gap-3 p-3">
           <div className="min-w-0 flex-1">
             <div className="text-[11px] text-muted-foreground">Публикация · {district}</div>
-            <div className="font-display text-lg font-semibold text-primary">{price} сом</div>
+            <div className="font-display text-lg font-semibold text-primary">{numPrice > 0 ? `${numPrice} сом` : "Цена не указана"}</div>
           </div>
-          <Button size="lg" className="rounded-full px-6" onClick={publish} disabled={!analyzed || submitting || aiLoading || (ai ? !ai.isBouquet : false)}>
+          <Button size="lg" className="rounded-full px-6" onClick={publish} disabled={!analyzed || submitting || aiLoading || numPrice <= 0 || (ai ? !ai.isBouquet : false)}>
             {submitting ? "…" : "Опубликовать"}
           </Button>
         </div>
