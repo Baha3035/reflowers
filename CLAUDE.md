@@ -86,7 +86,11 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
 - `docs/DECISIONS.md`: product/tech decisions with reasons. Add an entry when you make one.
 - `docs/OWNER_ACTIONS.md`: things only the owner can do (Lovable settings, secrets, BotFather, domain).
 - `docs/TESTING.md`: how to run the app against a local Supabase and test it in a browser.
-- `docs/research/`: competitor research (Second Bloom, Buket.kg, Flowwow, lalafo, KG login/payments).
+- `docs/research/`: competitor research (Second Bloom, Buket.kg, Flowwow, lalafo, KG login/payments) and
+  `moderation-policies.md` (the adopted ban/strike policy, §4).
+- `node scripts/check-live-db.mjs`: read-only check that migrations reached the live DB. Add a line for every
+  new migration.
+- The brand is changing (#25). Until it's chosen, keep "ReFlowers" in copy and don't hard-code a new name.
 - One issue per task. Reference it in the branch/PR (`Closes #N`). Ask the owner before closing
   `owner-action` / `needs-decision` issues.
 - Branches/PRs: never push to `main` directly. Stack PRs when they depend on an unmerged one and say so in the

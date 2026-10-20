@@ -3,6 +3,39 @@
 Newest first. Format: decision, why, consequences. Add an entry whenever you make a product or
 architecture choice that a future agent could otherwise undo.
 
+## 2026-10-15: No public Telegram channel; the bot is private only
+- **Why (owner):** a channel that reposts every bouquet would just copy the existing Telegram resale channels («Re Bloom Flowers Бишкек», Buket.kg). Our product is the site: search, expiry, chat, contacts, trust.
+- **The bot does only:** login and phone verification (#4) and personal notifications to the user (#5).
+- **Consequences:**
+  - #6 is closed.
+  - Growth relies on shared listing links (link previews work), word of mouth, Instagram and shops.
+
+## 2026-10-15: Seller reviews are public
+- **Why (owner):** buyers decide whom to trust from reviews. Every marketplace shows them.
+- **How:** migration `20261015090000_public_reviews.sql` lets everyone read reviews; who can write them is unchanged.
+- **Caution:** a Lovable security pass made them private earlier (twice). Don't revert it.
+
+## 2026-10-15: Moderation follows the strike model in `docs/research/moderation-policies.md` §4
+- **Why (owner):** copy what established platforms do (Second Bloom, lalafo, Avito, OLX, Vinted, Meta, Flowwow).
+- **Rules:**
+  - **Instant permanent ban:** fraud; selling a bouquet you don't have; third-party card + refusing to show the bouquet; ban evasion; threats or doxxing; mass fake reviews.
+  - **Strikes:** last 180 days. 1 = warning, 2 = 3-day block, 3 = 30-day block, 4 = permanent.
+  - **Listing removal only:** contacts in the listing text, duplicates, wrong data.
+- **Evidence:** the in-app chat and deal history. A report means a moderator may read the chat. One appeal within 30 days.
+- **Never publish** scammers' card numbers, phones or names. Second Bloom does; it's risky under the Kyrgyz Digital Code. Fraud goes to the police only on official request.
+- The numbers are a proposal from the research; the owner may tune them. Implementation: #9.
+
+## 2026-10-15: Free posting; revenue only from promotion
+- **Why (owner):** win sellers from Buket.kg (150 som per post) and Second Bloom (about $2.50 per post).
+- **Consequence:** #17 is now "automate paying for boosts" (QR / MBank), not a posting fee.
+
+## 2026-10-15: No auctions in v1
+- **Why (owner):** not needed for launch. Second Bloom's own volume moved to fixed price. #16 stays at P3.
+
+## 2026-10-15: The brand will change from "ReFlowers"
+- **Why:** too close to the existing Telegram channels in Bishkek.
+- **Status:** candidates in #25. Don't create the bot, domain or handles until the name is chosen.
+
 ## 2026-10-12: Stay on Lovable hosting and Lovable Cloud (Supabase)
 - **Why:** fastest path to users. `main` is two-way synced with Lovable.
 - **Consequences:**
@@ -54,7 +87,7 @@ architecture choice that a future agent could otherwise undo.
   - A bot reaches iPhone users without "Add to Home Screen".
   - The competing resale communities live in Telegram.
   - SMS via Twilio is about $0.32 per message to +996.
-- **Order:** bot + channel (#5, #6), then Telegram login (#4), then SMS (#19).
+- **Order:** bot notifications (#5), then Telegram login (#4), then SMS (#19). No public channel (see 2026-10-15).
 
 ## 2026-10-12: Web push accepts any Google push host
 - **Why:** Chrome now issues `jmt17.google.com` endpoints. The original `fcm.googleapis.com`-only allowlist silently broke push on Chrome and Android.

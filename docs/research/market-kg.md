@@ -4,6 +4,7 @@ Summary of the research behind `docs/ROADMAP.md`. Second Bloom has its own deep 
 `second-bloom.md`. Some figures come from secondary sources; recheck before relying on prices.
 
 ## Direct competitors in Bishkek
+- **«Re Bloom Flowers Бишкек»** (t.me/rebloom_kg): about 11.3k subscribers. Resale and sale of bouquets; listings are posted through an admin (@rebloom777).
 - **Buket.kg** (https://buket.kg):
   - Telegram group t.me/flowers_kgz, "Цветы Бишкек | Перепродажа цветов Бишкек", about 15k members.
   - Posts go through a bot (@buket_kgbot / @flowers_kgzbot). **150 som per post**, plus **50 som per post** from people you referred.
@@ -31,7 +32,7 @@ Summary of the research behind `docs/ROADMAP.md`. Second Bloom has its own deep 
 
 ## Messengers
 - An older (2020) survey had WhatsApp at about 88% vs Telegram about 4% in Kyrgyzstan. Telegram is much bigger now among young urban users, and every resale community above runs on it.
-- Conclusion: support WhatsApp and Telegram contact buttons; use Telegram for the channel, bot and login.
+- Conclusion: support WhatsApp and Telegram contact buttons; use a private Telegram bot for login and notifications (no public channel, see DECISIONS).
 
 ## Payments
 - ELQR (the National Bank's QR standard) works across all banks and wallets. MBank leads in QR users.
