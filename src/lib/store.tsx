@@ -58,9 +58,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Auth session bootstrap + listener
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setAuthLoading(false);
+      // A password-reset link signs the user in. If the auth server sent them to the site root
+      // (redirect URL not allow-listed), still take them to the "new password" form.
+      if (event === "PASSWORD_RECOVERY" && !window.location.pathname.startsWith("/auth")) {
+        window.location.replace("/auth?reset=1");
+      }
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
