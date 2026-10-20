@@ -1,7 +1,8 @@
-// Sends queued web pushes (rows in push_outbox) to every device the recipient enabled.
-// Server-only: uses the service-role client.
+// Sends queued notifications (rows in push_outbox) as web pushes to every device the recipient
+// enabled, and as a Telegram message if they linked Telegram. Server-only: uses the service-role client.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { sendWebPush, type VapidKeys } from "./web-push.server";
+import { sendTelegramNotifications, telegramConfig } from "./telegram.server";
 
 // Pushes older than this are dropped instead of sent (e.g. while VAPID keys were missing).
 const MAX_AGE_MS = 60 * 60 * 1000;
@@ -19,7 +20,7 @@ export function getVapidKeys(): VapidKeys | null {
 
 export async function dispatchPendingPush(limit = 100): Promise<{ sent: number }> {
   const vapid = getVapidKeys();
-  if (!vapid) return { sent: 0 };
+  if (!vapid && !telegramConfig()) return { sent: 0 };
 
   const { data: pending, error } = await supabaseAdmin
     .from("push_outbox")
@@ -47,6 +48,12 @@ export async function dispatchPendingPush(limit = 100): Promise<{ sent: number }
   );
   const userIds = [...new Set(fresh.map((r) => r.user_id))];
   if (!userIds.length) return { sent: 0 };
+
+  const telegramSent = await sendTelegramNotifications(fresh).catch((e) => {
+    console.warn("[telegram] dispatch failed", e);
+    return 0;
+  });
+  if (!vapid) return { sent: telegramSent };
 
   const { data: subs, error: subsError } = await supabaseAdmin
     .from("push_subscriptions")
@@ -89,7 +96,7 @@ export async function dispatchPendingPush(limit = 100): Promise<{ sent: number }
       .update({ last_success_at: new Date().toISOString() })
       .in("id", [...delivered]);
   }
-  return { sent };
+  return { sent: sent + telegramSent };
 }
 
 // Never let a push problem break the action that triggered it.

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { TelegramLoginButton } from "@/components/marketplace/Telegram";
 
 // Only same-site paths, so ?redirect= can't send people to another website.
 function safeRedirect(v: unknown) {
@@ -193,6 +194,8 @@ function AuthPage() {
             </div>
           ) : (
             <>
+              {(mode === "signin" || mode === "signup") && <TelegramLoginButton />}
+
               {mode === "signup" && (
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   {([

@@ -2,6 +2,24 @@
 
 Update at the end of every session: what changed, what's open, what's next. Newest first.
 
+## 2026-10-21
+- **Live:**
+  - #28 (auth messages + password reset) is merged.
+  - Push works on the published site (owner tested).
+  - The Telegram secrets are set and BotFather `/setdomain reflowers.lovable.app` is done (bot @reflowwwersBot).
+- **Telegram PR (closes #4, #5):**
+  - «Войти через Telegram»
+  - «Подключить Telegram» on /notifications
+  - bot DMs for every notification and chat message
+  - verified phone via /phone
+  - a profile guard fixing self-set `verified`/`rating`
+  - migration `20261021090000_telegram.sql`
+- **Tests:**
+  - mock Bot API + fake updates: `scripts/e2e/telegram-flows.mjs`, all checks pass
+  - launch flows re-run: pass
+- **Next for the owner:** merge, apply the migration, publish, then «Подключить Telegram» once (registers the webhook). Steps: `docs/OWNER_ACTIONS.md`.
+- **Next for agents:** #9 (terms + reports + strikes), #7, #8, #10.
+
 ## 2026-10-20 (later)
 - **Merged and live:** #26 is merged; Lovable applied the expiry/contacts and public-reviews migrations.
 - **Bug #27:** the owner couldn't log in with a recently created account.

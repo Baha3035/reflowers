@@ -33,6 +33,7 @@ export type DbPublicProfile = {
   shop_name: string | null;
   seller_type: "private" | "shop" | null;
   verified: boolean | null;
+  phone_verified?: boolean | null;
   rating: number | null;
   reviews_count: number | null;
   created_at: string | null;
@@ -47,6 +48,7 @@ export function mapSeller(p: DbPublicProfile): SellerSummary {
     type,
     name: (type === "shop" ? p.shop_name : p.display_name) || "Продавец",
     verified: !!p.verified,
+    phoneVerified: !!p.phone_verified,
     rating: Number(p.rating ?? 0),
     reviewsCount: p.reviews_count ?? 0,
     createdAt: p.created_at,
@@ -87,7 +89,7 @@ export async function fetchSellers(ids: string[]): Promise<Map<string, SellerSum
   if (!unique.length) return new Map();
   const { data } = await supabase
     .from("public_profiles")
-    .select("id, display_name, shop_name, seller_type, verified, rating, reviews_count, created_at")
+    .select("id, display_name, shop_name, seller_type, verified, phone_verified, rating, reviews_count, created_at")
     .in("id", unique);
   return new Map((data ?? []).map((p) => [p.id ?? "", mapSeller(p as DbPublicProfile)]));
 }

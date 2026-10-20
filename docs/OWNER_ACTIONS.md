@@ -44,18 +44,15 @@ Code syncs to Lovable automatically when a PR is merged into `main`. **Database 
 6. **Hide the Lovable badge** (#3): Project settings → Publishing → "Hide Lovable badge" (paid plan), then publish again.
 7. **Seed the feed** (pending): the site no longer shows demo bouquets.
 
-## Telegram bot (#4 login, #5 notifications)
-The bot is private: login, phone verification and personal notifications. No public channel.
-1. In @BotFather:
-   - `/setdomain` → choose the bot → `reflowers.lovable.app` (required for the "Log in with Telegram" button)
-   - optional: `/setdescription`, `/setuserpic`
-2. Lovable → **More → Cloud → Secrets → Add secret**:
-   - `TELEGRAM_BOT_TOKEN`: the token from BotFather (`123456:ABC…`)
-   - `TELEGRAM_BOT_USERNAME`: the bot's username **without** `@`
-   - `TELEGRAM_WEBHOOK_SECRET`: a random string. Generate it with `openssl rand -hex 32`; Telegram sends it back with every update, so the site knows the request is real.
-
-   Never paste the token into a chat (including Claude or Lovable) or a commit. If it leaks, BotFather → `/revoke`.
-3. An agent then builds #5 and #4. After that PR merges and is published, the bot's webhook gets registered (the PR will say how).
+## Telegram bot (#4 login, #5 notifications), done in code; to switch on
+Secrets and `/setdomain` are already done (2026-10-21).
+1. Merge the Telegram PR, then apply its migration (steps at the top): `20261021090000_telegram.sql`. Run `node scripts/check-live-db.mjs`; all lines ✅.
+2. **Publish.**
+3. On the published site, sign in → **/notifications → «Подключить Telegram»** → Telegram opens → **Start**. The card switches to "Telegram подключён".
+   - This first click also registers the bot's webhook automatically. Until someone does it, the bot doesn't answer messages.
+4. In the bot, send **/phone** and tap «📱 Подтвердить номер». Your listings then show «Номер подтверждён».
+5. Try **«Войти через Telegram»** on /auth in a private window. It needs the published site; the Lovable preview shows "Bot domain invalid", which is expected.
+6. If something doesn't work: Lovable → Cloud → Logs (look for `[telegram]`).
 
 ## Later
 - **Custom domain (#20):** not now. When you do it (paid plan):
