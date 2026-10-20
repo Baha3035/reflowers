@@ -2,6 +2,12 @@
 
 Update at the end of every session: what changed, what's open, what's next. Newest first.
 
+## 2026-10-20 (later)
+- PR #26's two migrations arrived in `supabase/migrations/` and were applied in Lovable, byte-for-byte:
+  - `20261013090000_listing_expiry_and_contacts.sql` (24h listing expiry, `extend_listing()`, public seller profiles, seller contact channels)
+  - `20261015090000_public_reviews.sql` (reviews publicly readable — owner decision, reverses the earlier authenticated-only restriction)
+- `node scripts/check-live-db.mjs`: all 8 checks ✅.
+
 ## 2026-10-20
 - **Live:**
   - PR #1 is merged into `main`. Lovable applied its 2 migrations (boosts/AI, push); `check-live-db` shows them ✅.

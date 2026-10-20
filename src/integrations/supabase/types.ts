@@ -815,9 +815,9 @@ export type Database = {
         Args: { _listing_id: string }
         Returns: {
           call: boolean
-          phone: string | null
+          phone: string
           telegram: boolean
-          telegram_username: string | null
+          telegram_username: string
           whatsapp: boolean
         }[]
       }
