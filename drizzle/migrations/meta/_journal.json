@@ -15,6 +15,13 @@
       "when": 1792059285418,
       "tag": "0001_push_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792490391615,
+      "tag": "0002_listing_expiry_and_contacts",
+      "breakpoints": true
     }
   ]
 }
