@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Heart, MapPin, Clock, Star, BadgeCheck, Zap } from "lucide-react";
 import { useApp } from "@/lib/store";
-import { formatSom, type Listing, getSeller } from "@/lib/mock-data";
+import { formatSom, type Listing } from "@/lib/marketplace";
 import { cn } from "@/lib/utils";
 import { useServerFn } from "@tanstack/react-start";
 import { createDeal } from "@/lib/deals.functions";
@@ -12,22 +12,16 @@ import { toast } from "sonner";
 export function ListingCard({ listing, compact = false, horizontal = false }: { listing: Listing; compact?: boolean; horizontal?: boolean }) {
   const { favorites, toggleFavorite, user, t } = useApp();
   const fav = favorites.has(listing.id);
-  const seller = getSeller(listing.sellerId);
+  const seller = listing.seller;
   const discount = listing.oldPrice ? Math.round((1 - listing.price / listing.oldPrice) * 100) : 0;
   const navigate = useNavigate();
   const createDealFn = useServerFn(createDeal);
   const [buying, setBuying] = useState(false);
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.id);
 
   async function handleBuy(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) { navigate({ to: "/auth" }); return; }
-    if (!isUuid) {
-      // Demo listing — fall back to legacy checkout flow
-      navigate({ to: "/checkout", search: { id: listing.id } });
-      return;
-    }
+    if (!user) { navigate({ to: "/auth", search: { redirect: `/listing/${listing.id}` } }); return; }
     if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
     setBuying(true);
     try {
@@ -70,7 +64,7 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
             <h3 className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-foreground/90">{listing.title}</h3>
             <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
               <span className="inline-flex items-center gap-0.5"><MapPin className="h-3 w-3" />{listing.district}</span>
-              {seller && <span className="inline-flex items-center gap-0.5 ml-auto"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{seller.rating}</span>}
+              {seller && seller.reviewsCount > 0 && <span className="inline-flex items-center gap-0.5 ml-auto"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{seller.rating.toFixed(1)}</span>}
             </div>
           </div>
           <div className="flex flex-col items-end justify-between">
@@ -126,7 +120,7 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
           >
             <Zap className="h-3 w-3" /> {buying ? "…" : t("card.buy")}
           </button>
-          {listing.hoursLeft && listing.hoursLeft <= 6 && (
+          {listing.hoursLeft > 0 && listing.hoursLeft <= 6 && (
             <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
               <Clock className="h-3 w-3" /> осталось {listing.hoursLeft} ч
             </div>
@@ -147,7 +141,7 @@ export function ListingCard({ listing, compact = false, horizontal = false }: { 
             <div className="flex items-center gap-1.5 pt-1 text-[11px] text-muted-foreground">
               <span className="truncate">{seller.type === "shop" ? "🏪" : "👤"} {seller.name}</span>
               {seller.verified && <BadgeCheck className="h-3 w-3 text-primary" />}
-              <span className="ml-auto inline-flex items-center gap-0.5"><Star className="h-3 w-3 fill-gold text-gold" style={{ color: "var(--gold)" }} />{seller.rating}</span>
+              {seller.reviewsCount > 0 && <span className="ml-auto inline-flex items-center gap-0.5"><Star className="h-3 w-3 fill-gold text-gold" style={{ color: "var(--gold)" }} />{seller.rating.toFixed(1)}</span>}
             </div>
           )}
         </div>

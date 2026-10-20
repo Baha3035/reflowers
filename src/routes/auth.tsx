@@ -7,16 +7,26 @@ import { useApp } from "@/lib/store";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+// Only same-site paths, so ?redirect= can't send people to another website.
+function safeRedirect(v: unknown) {
+  return typeof v === "string" && v.startsWith("/") && !v.startsWith("//") ? v : undefined;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>): { redirect?: string; signup?: "private" | "shop" } => ({
+    redirect: safeRedirect(s.redirect),
+    signup: s.signup === "shop" || s.signup === "private" ? s.signup : undefined,
+  }),
   head: () => ({ meta: [{ title: "Вход — ReFlowers" }, { name: "description", content: "Войдите или создайте аккаунт ReFlowers." }] }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { redirect, signup } = Route.useSearch();
   const { user, authLoading } = useApp();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [sellerType, setSellerType] = useState<"private" | "shop">("private");
+  const [mode, setMode] = useState<"signin" | "signup">(signup ? "signup" : "signin");
+  const [sellerType, setSellerType] = useState<"private" | "shop">(signup ?? "private");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -24,8 +34,8 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && user) navigate({ to: "/" });
-  }, [user, authLoading, navigate]);
+    if (!authLoading && user) navigate({ href: redirect ?? "/" });
+  }, [user, authLoading, navigate, redirect]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +60,7 @@ function AuthPage() {
         if (error) throw error;
         toast.success("С возвращением!");
       }
-      navigate({ to: "/" });
+      navigate({ href: redirect ?? "/" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       toast.error(msg.includes("Invalid login") ? "Неверная почта или пароль" : msg);

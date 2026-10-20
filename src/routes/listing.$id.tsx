@@ -2,104 +2,108 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { AppLayout } from "@/components/marketplace/AppLayout";
 import { ListingCard } from "@/components/marketplace/ListingCard";
 import { Button } from "@/components/ui/button";
-import { LISTINGS, REVIEWS, formatSom, getListing, getSeller, type Listing } from "@/lib/mock-data";
-import { mapDbListing } from "@/lib/db-listings";
+import { UUID_RE, formatSom, postedAgo, type Listing } from "@/lib/marketplace";
+import { LISTING_COLUMNS, mapDbListing, fetchSellers, useDbListings, type DbListing } from "@/lib/db-listings";
 import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/lib/store";
-import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, ShieldCheck, Star } from "lucide-react";
+import { BadgeCheck, ChevronLeft, Clock, Heart, MapPin, MessageCircle, Share2, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
 import { ReviewSection } from "@/components/marketplace/ReviewSection";
+import { SellerContactButtons } from "@/components/marketplace/SellerContacts";
 import { useServerFn } from "@tanstack/react-start";
 import { createDeal } from "@/lib/deals.functions";
 
+const MONTHS = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+
 export const Route = createFileRoute("/listing/$id")({
-  head: ({ params }) => {
-    const l = getListing(params.id);
-    return { meta: [
-      { title: l ? `${l.title} — ReFlowers` : "Букет — ReFlowers" },
-      { name: "description", content: l?.description ?? "Букет на маркетплейсе ReFlowers." },
-      ...(l ? [{ property: "og:image", content: l.image }] : []),
-    ] };
-  },
+  // Explicit return type: newer TanStack versions otherwise infer loaderData as undefined.
   loader: async ({ params }): Promise<{ listing: Listing }> => {
-    const local = getListing(params.id);
-    if (local) return { listing: local };
-    if (/^[0-9a-f]{8}-/.test(params.id)) {
-      const { data } = await supabase
-        .from("listings")
-        .select("id, seller_id, title, description, price, original_price, category, condition, city, district, images, status, urgent, created_at")
-        .eq("id", params.id)
-        .maybeSingle();
-      if (data) return { listing: mapDbListing(data as never) };
-    }
-    throw notFound();
+    if (!UUID_RE.test(params.id)) throw notFound();
+    const { data } = await supabase.from("listings").select(LISTING_COLUMNS).eq("id", params.id).maybeSingle();
+    if (!data) throw notFound();
+    const row = data as DbListing;
+    const sellers = await fetchSellers([row.seller_id]);
+    return { listing: mapDbListing(row, sellers.get(row.seller_id)) };
+  },
+  // Rendered on the server, so Telegram/WhatsApp link previews show this bouquet.
+  head: ({ loaderData }) => {
+    const l = loaderData?.listing;
+    if (!l) return { meta: [{ title: "Букет — ReFlowers" }] };
+    const title = `${l.title} — ${formatSom(l.price)}`;
+    const description = [l.district, l.description].filter(Boolean).join(" · ") || "Букет на ReFlowers, Бишкек";
+    return {
+      meta: [
+        { title: `${title} | ReFlowers` },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:image", content: l.image },
+        { property: "og:type", content: "product" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: l.image },
+      ],
+    };
   },
   component: ListingPage,
   notFoundComponent: NotFound,
 });
 
 function NotFound() {
-  return <AppLayout><div className="mx-auto max-w-md p-8 text-center"><h1 className="font-display text-2xl">Букет не найден</h1><Link to="/catalog" className="mt-4 inline-block text-primary underline">Вернуться в каталог</Link></div></AppLayout>;
+  return (
+    <AppLayout>
+      <div className="mx-auto max-w-md p-8 text-center">
+        <h1 className="font-display text-2xl">Букет не найден</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Возможно, его уже продали или объявление истекло.</p>
+        <Link to="/catalog" className="mt-4 inline-block text-primary underline">Смотреть другие букеты</Link>
+      </div>
+    </AppLayout>
+  );
 }
 
 function ListingPage() {
-  const { listing } = Route.useLoaderData() as { listing: Listing };
-  const { t } = useApp();
-  const isSellerUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.sellerId);
-  const dbSeller = useQuery({
-    queryKey: ["listing-seller", listing.sellerId],
-    enabled: isSellerUuid,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name, shop_name, seller_type, avatar_url, verified, rating, reviews_count")
-        .eq("id", listing.sellerId)
-        .maybeSingle();
-      return data;
-    },
-  });
-  const seller = getSeller(listing.sellerId) ?? (dbSeller.data ? {
-    id: dbSeller.data.id,
-    type: (dbSeller.data.seller_type === "shop" ? "shop" : "private") as "shop" | "private",
-    name: (dbSeller.data.seller_type === "shop" ? dbSeller.data.shop_name : dbSeller.data.display_name) || "Продавец",
-    rating: Number(dbSeller.data.rating ?? 0),
-    sales: 0,
-    responseTime: "≈30 мин",
-    memberSince: "новый",
-    verified: !!dbSeller.data.verified,
-    reviewsCount: dbSeller.data.reviews_count ?? 0,
-  } : {
-    id: listing.sellerId,
-    type: "private" as const,
-    name: "Продавец",
-    rating: 5,
-    sales: 0,
-    responseTime: "≈30 мин",
-    memberSince: "новый",
-    verified: false,
-    reviewsCount: 0,
-  });
-  const { favorites, toggleFavorite } = useApp();
-  const { user } = useApp();
+  const { listing } = Route.useLoaderData();
+  const { t, favorites, toggleFavorite, user } = useApp();
+  const seller = listing.seller;
   const navigate = useNavigate();
   const fav = favorites.has(listing.id);
-  const gallery = listing.gallery ?? [listing.image];
+  const gallery = listing.gallery;
   const [idx, setIdx] = useState(0);
-  const similar = LISTINGS.filter(l => l.id !== listing.id && l.flowerType === listing.flowerType).slice(0, 4);
+  const { data: feed = [] } = useDbListings();
+  const similar = feed.filter((l) => l.id !== listing.id).slice(0, 4);
   const [sending, setSending] = useState(false);
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}/.test(listing.id);
   const createDealFn = useServerFn(createDeal);
   const [buying, setBuying] = useState(false);
-  const notActive = listing.status && listing.status !== "active";
+  const expired = listing.status === "active" && listing.hoursLeft === 0;
+  const notActive = listing.status !== "active" || expired;
+  const inactiveLabel = expired
+    ? "Объявление истекло"
+    : listing.status === "sold"
+      ? t("listing.sold")
+      : t("listing.reserved");
+  const loginFirst = () => navigate({ to: "/auth", search: { redirect: `/listing/${listing.id}` } });
+
+  async function share() {
+    const url = window.location.href;
+    const text = `${listing.title} — ${formatSom(listing.price)}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: text, text, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Ссылка скопирована");
+    } catch {
+      /* user closed the share sheet */
+    }
+  }
 
   async function wantToBuy() {
-    if (!user) { navigate({ to: "/auth" }); return; }
-    if (!isUuid) { toast.info("Это демо-объявление"); return; }
+    if (!user) return loginFirst();
     if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
-    if (notActive) { toast.info(listing.status === "sold" ? t("listing.sold") : t("listing.reserved")); return; }
+    if (notActive) { toast.info(inactiveLabel); return; }
     setBuying(true);
     try {
       const res = await createDealFn({ data: { listing_id: listing.id } });
@@ -113,10 +117,9 @@ function ListingPage() {
   }
 
   async function startChat() {
-    if (!user) { navigate({ to: "/auth" }); return; }
-    if (!isUuid) { toast.info("Это демо-объявление"); return; }
+    if (!user) return loginFirst();
     if (user.id === listing.sellerId) { toast.info("Это ваше объявление"); return; }
-    if (notActive) { toast.info(listing.status === "sold" ? t("listing.sold") : t("listing.reserved")); return; }
+    if (notActive) { toast.info(inactiveLabel); return; }
     setSending(true);
     try {
       const { data: existing } = await supabase
@@ -144,6 +147,7 @@ function ListingPage() {
     }
   }
   const discount = listing.oldPrice ? Math.round((1 - listing.price / listing.oldPrice) * 100) : 0;
+  const memberSince = seller?.createdAt ? new Date(seller.createdAt) : null;
 
   return (
     <AppLayout>
@@ -151,8 +155,8 @@ function ListingPage() {
         <div className="flex items-center justify-between py-3">
           <Link to="/catalog" className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-2 text-sm"><ChevronLeft className="h-4 w-4" /> Каталог</Link>
           <div className="flex gap-2">
-            <button onClick={() => toggleFavorite(listing.id)} className="grid h-10 w-10 place-items-center rounded-full bg-muted"><Heart className={cn("h-4 w-4", fav && "fill-destructive text-destructive")} /></button>
-            <button className="grid h-10 w-10 place-items-center rounded-full bg-muted"><Share2 className="h-4 w-4" /></button>
+            <button onClick={() => toggleFavorite(listing.id)} aria-label="В избранное" className="grid h-10 w-10 place-items-center rounded-full bg-muted"><Heart className={cn("h-4 w-4", fav && "fill-destructive text-destructive")} /></button>
+            <button onClick={share} aria-label="Поделиться" className="grid h-10 w-10 place-items-center rounded-full bg-muted"><Share2 className="h-4 w-4" /></button>
           </div>
         </div>
 
@@ -173,11 +177,11 @@ function ListingPage() {
           </div>
 
           <div>
-            <div className="flex flex-wrap gap-1.5">
-              {listing.urgent && <span className="rounded-full bg-destructive/15 px-2.5 py-1 text-[11px] font-medium text-destructive">🔥 Срочная продажа</span>}
-              {listing.badge && <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-medium text-secondary-foreground">{listing.badge}</span>}
-              <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium text-accent-foreground">✓ Фото сделано сегодня</span>
-            </div>
+            {listing.urgent && (
+              <div className="flex flex-wrap gap-1.5">
+                <span className="rounded-full bg-destructive/15 px-2.5 py-1 text-[11px] font-medium text-destructive">🔥 Срочная продажа</span>
+              </div>
+            )}
             <h1 className="mt-3 font-display text-2xl leading-tight md:text-3xl">{listing.title}</h1>
             <div className="mt-2 flex items-baseline gap-3">
               <span className="font-display text-3xl font-semibold text-primary">{formatSom(listing.price)}</span>
@@ -186,25 +190,14 @@ function ListingPage() {
             {listing.oldPrice && <div className="mt-1 text-xs text-muted-foreground">Около {formatSom(listing.oldPrice)} в магазине</div>}
 
             <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-              <Info label="Свежесть" value={listing.freshness} />
-              <Info label="Состояние" value="Как новый" />
-              <Info label="Тип" value={listing.flowerType} />
-              <Info label="Цвет" value={listing.color} />
-              <Info label="Размер" value={listing.size} />
-              {listing.count && <Info label="Количество" value={`${listing.count} шт.`} />}
+              <Info label="Опубликовано" value={postedAgo(listing.createdAt)} />
               <Info label="Район" value={listing.district} icon={<MapPin className="h-3.5 w-3.5" />} />
               <Info label="Встреча" value="Согласуется в чате" />
             </div>
 
-            {listing.hoursLeft && (
+            {!notActive && listing.hoursLeft > 0 && (
               <div className="mt-3 flex items-center gap-2 rounded-2xl bg-destructive/8 p-3 text-sm text-destructive">
                 <Clock className="h-4 w-4" /> Объявление исчезнет через {listing.hoursLeft} ч
-              </div>
-            )}
-
-            {listing.reason && (
-              <div className="mt-3 rounded-2xl bg-muted p-3 text-sm">
-                <span className="text-muted-foreground">Причина продажи: </span><b>{listing.reason}</b>
               </div>
             )}
 
@@ -216,32 +209,28 @@ function ListingPage() {
             )}
 
             {/* Seller */}
-            <Link to="/shop/$id" params={{ id: seller.id }} className="mt-5 flex items-center gap-3 rounded-3xl bg-card p-3 shadow-[var(--shadow-card)]">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary font-display text-lg font-semibold text-secondary-foreground">{seller.name.charAt(0)}</div>
+            <Link to="/shop/$id" params={{ id: listing.sellerId }} className="mt-5 flex items-center gap-3 rounded-3xl bg-card p-3 shadow-[var(--shadow-card)]">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary font-display text-lg font-semibold text-secondary-foreground">{(seller?.name ?? "П").charAt(0)}</div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
-                  <span className="font-medium">{seller.name}</span>
-                  {seller.verified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                  <span className="font-medium">{seller?.name ?? "Продавец"}</span>
+                  {seller?.verified && <BadgeCheck className="h-4 w-4 text-primary" />}
                 </div>
                 <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="inline-flex items-center gap-0.5"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{seller.rating}</span>
-                  <span>· {seller.sales} продаж</span>
-                  <span>· отвечает {seller.responseTime}</span>
+                  {seller && seller.reviewsCount > 0 ? (
+                    <span className="inline-flex items-center gap-0.5"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{seller.rating.toFixed(1)} · {seller.reviewsCount} отзывов</span>
+                  ) : (
+                    <span>Пока без отзывов</span>
+                  )}
+                  {memberSince && <span>· на ReFlowers с {MONTHS[memberSince.getMonth()]} {memberSince.getFullYear()}</span>}
                 </div>
               </div>
               <span className="text-xs text-muted-foreground">Открыть →</span>
             </Link>
 
-            {/* Trust */}
-            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-              <TrustBadge icon={<ShieldCheck className="h-3 w-3" />} label="Номер подтверждён" />
-              <TrustBadge label="Быстро отвечает" />
-              <TrustBadge label="Безопасная сделка" />
-            </div>
-
             {notActive ? (
               <div className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center text-sm font-medium text-destructive">
-                {listing.status === "sold" ? t("listing.sold") : t("listing.reserved")}
+                {inactiveLabel}
               </div>
             ) : (
               <>
@@ -250,7 +239,8 @@ function ListingPage() {
                   <Button size="lg" onClick={wantToBuy} disabled={buying} className="flex-1 w-full rounded-full">{buying ? "…" : t("listing.wantToBuy")}</Button>
                   <Button size="lg" variant="secondary" onClick={startChat} disabled={sending} className="flex-1 w-full rounded-full"><MessageCircle className="h-4 w-4" /> {sending ? "…" : t("listing.message")}</Button>
                 </div>
-                <div className="mt-2 hidden text-[11px] text-muted-foreground md:block">
+                <SellerContactButtons listingId={listing.id} title={listing.title} />
+                <div className="mt-2 text-[11px] text-muted-foreground">
                   {t("listing.paymentNotice")}
                 </div>
               </>
@@ -258,33 +248,16 @@ function ListingPage() {
           </div>
         </div>
 
-        {/* Reviews */}
-        {isSellerUuid ? (
-          <ReviewSection targetUserId={listing.sellerId} />
-        ) : (
+        <ReviewSection targetUserId={listing.sellerId} />
+
+        {similar.length > 0 && (
           <section className="mt-10">
-            <h2 className="font-display text-xl">{t("listing.reviews")}</h2>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {REVIEWS.slice(0, 4).map(r => (
-                <div key={r.id} className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{r.author}</span>
-                    <span className="inline-flex items-center gap-0.5 text-xs"><Star className="h-3 w-3" style={{ fill: "var(--gold)", color: "var(--gold)" }} />{r.rating}</span>
-                  </div>
-                  <p className="mt-1.5 text-sm text-foreground/80">{r.text}</p>
-                  <div className="mt-1 text-[11px] text-muted-foreground">{r.date}</div>
-                </div>
-              ))}
+            <h2 className="font-display text-xl">Ещё букеты</h2>
+            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+              {similar.map(l => <ListingCard key={l.id} listing={l} />)}
             </div>
           </section>
         )}
-
-        <section className="mt-10">
-          <h2 className="font-display text-xl">{t("listing.similar")}</h2>
-          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-            {similar.map(l => <ListingCard key={l.id} listing={l} />)}
-          </div>
-        </section>
       </div>
 
       {/* Sticky mobile action bar */}
@@ -307,7 +280,4 @@ function Info({ label, value, icon }: { label: string; value: string; icon?: Rea
       <div className="mt-0.5 inline-flex items-center gap-1 font-medium text-foreground">{icon}{value}</div>
     </div>
   );
-}
-function TrustBadge({ label, icon }: { label: string; icon?: React.ReactNode }) {
-  return <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-accent-foreground">{icon}{label}</span>;
 }

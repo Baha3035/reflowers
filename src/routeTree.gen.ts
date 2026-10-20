@@ -15,7 +15,6 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CatalogRouteImport } from './routes/catalog'
 import { Route as BoostCheckoutRouteImport } from './routes/boost-checkout'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -53,11 +52,6 @@ const MessagesRoute = MessagesRouteImport.update({
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CatalogRoute = CatalogRouteImport.update({
@@ -107,7 +101,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/boost-checkout': typeof BoostCheckoutRoute
   '/catalog': typeof CatalogRoute
-  '/checkout': typeof CheckoutRoute
   '/favorites': typeof FavoritesRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -124,7 +117,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/boost-checkout': typeof BoostCheckoutRoute
   '/catalog': typeof CatalogRoute
-  '/checkout': typeof CheckoutRoute
   '/favorites': typeof FavoritesRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -142,7 +134,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/boost-checkout': typeof BoostCheckoutRoute
   '/catalog': typeof CatalogRoute
-  '/checkout': typeof CheckoutRoute
   '/favorites': typeof FavoritesRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -161,7 +152,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/boost-checkout'
     | '/catalog'
-    | '/checkout'
     | '/favorites'
     | '/messages'
     | '/notifications'
@@ -178,7 +168,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/boost-checkout'
     | '/catalog'
-    | '/checkout'
     | '/favorites'
     | '/messages'
     | '/notifications'
@@ -195,7 +184,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/boost-checkout'
     | '/catalog'
-    | '/checkout'
     | '/favorites'
     | '/messages'
     | '/notifications'
@@ -213,7 +201,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BoostCheckoutRoute: typeof BoostCheckoutRoute
   CatalogRoute: typeof CatalogRoute
-  CheckoutRoute: typeof CheckoutRoute
   FavoritesRoute: typeof FavoritesRoute
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -267,13 +254,6 @@ declare module '@tanstack/react-router' {
       path: '/favorites'
       fullPath: '/favorites'
       preLoaderRoute: typeof FavoritesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalog': {
@@ -341,7 +321,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BoostCheckoutRoute: BoostCheckoutRoute,
   CatalogRoute: CatalogRoute,
-  CheckoutRoute: CheckoutRoute,
   FavoritesRoute: FavoritesRoute,
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,
