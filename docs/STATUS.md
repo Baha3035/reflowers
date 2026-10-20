@@ -3,6 +3,14 @@
 Update at the end of every session: what changed, what's open, what's next. Newest first.
 
 ## 2026-10-20 (later)
+- **Merged and live:** #26 is merged; Lovable applied the expiry/contacts and public-reviews migrations.
+- **Bug #27:** the owner couldn't log in with a recently created account.
+  - Live requires email confirmation. Re-registering an existing email gets a fake success from Supabase, and the old password stays.
+  - The form said «Аккаунт создан!» and offered no password reset.
+  - Fixed in the PR for #27: «Проверьте почту», «уже зарегистрирован», resend confirmation, «Забыли пароль?» → «Новый пароль».
+  - Tested with confirmation ON plus Mailpit (`scripts/e2e/auth-flows.mjs`).
+
+## 2026-10-20 (later)
 - PR #26's two migrations arrived in `supabase/migrations/` and were applied in Lovable, byte-for-byte:
   - `20261013090000_listing_expiry_and_contacts.sql` (24h listing expiry, `extend_listing()`, public seller profiles, seller contact channels)
   - `20261015090000_public_reviews.sql` (reviews publicly readable — owner decision, reverses the earlier authenticated-only restriction)

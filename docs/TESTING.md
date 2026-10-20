@@ -47,6 +47,24 @@ mkdir -p .context/e2e/shots && cd .context/e2e && npm init -y >/dev/null && npm 
 cp ../../scripts/e2e/launch-flows.mjs . && sips -z 3000 4000 ../../src/assets/bouquet-red-roses.jpg --out big.jpg
 SB_ENV=/tmp/rf-sb.env node launch-flows.mjs     # every line should read true / sensible values
 ```
+`launch-flows.mjs` needs the local default (sign-up logs in immediately). **The live site requires email
+confirmation**, so test auth separately with `scripts/e2e/auth-flows.mjs` against a second local stack that has
+it on. Mailpit catches the emails:
+```sh
+mkdir -p /tmp/rf-confirm/supabase && cp -R supabase/migrations /tmp/rf-confirm/supabase/   # + the admin-user workaround file
+cat > /tmp/rf-confirm/supabase/config.toml <<'EOF2'
+project_id = "rfconfirm"
+[auth]
+site_url = "http://127.0.0.1:4173"
+additional_redirect_urls = ["http://127.0.0.1:4173/**"]
+[auth.email]
+enable_confirmations = true
+max_frequency = "1s"
+[auth.rate_limit]
+email_sent = 100
+EOF2
+(cd /tmp/rf-confirm && npx supabase@latest start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor)
+```
 - **Playwright with full Chromium**, not the headless shell:
   - The headless shell reports notifications as "denied".
   - Use `launchPersistentContext` for push; push doesn't work in incognito contexts.
