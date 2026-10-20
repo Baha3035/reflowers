@@ -41,7 +41,11 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
   from everyone except the seller, chat participants and admins. Client queries also filter `expires_at > now()`.
 - Paid boosts: sellers insert `listing_boosts` rows (always `pending`, price/duration set by DB);
   only `admin_review_boost()` applies them. Sellers cannot write `boost_*_until` / `urgent` on listings.
-- Confirm in Lovable that a migration pushed via GitHub was actually applied to the live database.
+- Migrations that arrive via GitHub are **not** applied automatically. After merging, the owner asks Lovable's chat
+  to apply them, then runs `node scripts/check-live-db.mjs`.
+- `drizzle/` (`drizzle.config.ts`, `drizzle/migrations/*`, `meta/_journal.json`) is Lovable's own record of applied
+  migrations (it copies applied files there as `0000_…`, `0001_…`). Don't edit it by hand. Keep writing migrations in
+  `supabase/migrations/`.
 
 ## Server functions
 - Use `createServerFn` + `.middleware([requireSupabaseAuth])` for anything user-specific; `context.supabase` runs with the user's RLS.
@@ -90,8 +94,11 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
   `moderation-policies.md` (the adopted ban/strike policy, §4).
 - `node scripts/check-live-db.mjs`: read-only check that migrations reached the live DB. Add a line for every
   new migration.
-- The brand is changing (#25). Until it's chosen, keep "ReFlowers" in copy and don't hard-code a new name.
+- The brand stays **ReFlowers** (owner decision, #25).
+- `scripts/e2e/launch-flows.mjs`: browser test of the main flows (how to run: `docs/TESTING.md` §3).
 - One issue per task. Reference it in the branch/PR (`Closes #N`). Ask the owner before closing
   `owner-action` / `needs-decision` issues.
-- Branches/PRs: never push to `main` directly. Stack PRs when they depend on an unmerged one and say so in the
-  PR body. After merging, confirm migrations were applied in Lovable.
+- Branches/PRs: never push to `main` directly. Avoid stacked PRs. GitHub does **not** retarget a stacked PR to `main`
+  when its base PR merges unless the base branch is deleted, so #24 merged into a dead branch and had to be
+  re-applied (#26). If you must stack, tell the owner to change the base to `main` before merging.
+  After merging, the owner applies migrations in Lovable.

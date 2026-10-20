@@ -32,9 +32,11 @@ architecture choice that a future agent could otherwise undo.
 ## 2026-10-15: No auctions in v1
 - **Why (owner):** not needed for launch. Second Bloom's own volume moved to fixed price. #16 stays at P3.
 
-## 2026-10-15: The brand will change from "ReFlowers"
-- **Why:** too close to the existing Telegram channels in Bishkek.
-- **Status:** candidates in #25. Don't create the bot, domain or handles until the name is chosen.
+## 2026-10-20: The brand stays "ReFlowers"; no domain for now
+- **Why (owner):** fine as is. #25 is closed and the shortlist (Kairagul, NaBis, BuketTap) is kept in the issue.
+- **Consequences:**
+  - The bot, the Telegram handles and the site use "ReFlowers".
+  - The custom domain (#20) waits, so the site stays on `reflowers.lovable.app`. When a domain comes, users will have to reinstall the app and re-enable push.
 
 ## 2026-10-12: Stay on Lovable hosting and Lovable Cloud (Supabase)
 - **Why:** fastest path to users. `main` is two-way synced with Lovable.

@@ -10,9 +10,9 @@ Every item is a GitHub issue; the issue is the source of truth for scope and sta
 "ReFlowers roadmap" (owner Baha3035). Labels: `P0` launch blocker · `P1` next · `P2` soon · `P3` later ·
 `owner-action` · `needs-decision` · `area:*`.
 
-## Done (pending merge)
+## Done
 - PWA (manifest, service worker, offline page, install banner) + web push — PR #1, with the fixes from testing.
-- Launch fixes — PR #24 (stacked on #1):
+- Launch fixes — PR #24, which merged into an old branch by mistake; it reaches `main` via PR #26:
   - removed all mock listings, shops, reviews and fake trust badges
   - 24h listing expiry plus extend
   - link previews for listings, and a working Share button
@@ -27,7 +27,6 @@ Every item is a GitHub issue; the issue is the source of truth for scope and sta
 ## P0: launch
 - #2 Launch checklist: merge, apply migrations, VAPID secrets, publish *(owner)*
 - #3 Hide the "Edit with Lovable" badge *(owner)*
-- #25 Choose a new brand name, before the bot, domain and handles *(owner, decision)*
 
 ## P1: next (copying what works for Second Bloom / Buket.kg)
 - #4 Log in with Telegram (verified phone)
@@ -54,8 +53,8 @@ Every item is a GitHub issue; the issue is the source of truth for scope and sta
 - #23 Referral program, holiday promos
 
 ## Suggested order
-1. #25 (name), then #2 and #3, then publish. Seed the feed: ask 10–20 friends to post real bouquets.
-2. Create the bot with the new name, then #5 (notifications) and #4 (Telegram login).
+1. Merge #26, apply its migrations, publish (#2), hide the badge (#3). Seed the feed: ask 10–20 friends to post real bouquets.
+2. #5 (bot notifications) and #4 (Telegram login): the bot exists; its secrets go into Lovable.
 3. #9 (terms + reports + strikes), #7, #8, then #10.
 4. Then #17 (pay for promotion), shops (#18), and the custom domain (#20) before any marketing push.
 

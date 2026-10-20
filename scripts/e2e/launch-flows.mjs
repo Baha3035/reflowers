@@ -1,0 +1,63 @@
+// End-to-end check of the launch flows against a local build. Setup and how to run: docs/TESTING.md §3.
+// Needs playwright installed outside the repo (it is not a project dependency).
+import { chromium } from "playwright";
+import fs from "node:fs";
+const env = Object.fromEntries(fs.readFileSync(process.env.SB_ENV ?? "/private/tmp/rf-sb.env","utf8").split("\n").filter(l=>l.includes("=")).map(l=>{const i=l.indexOf("=");return [l.slice(0,i), l.slice(i+1).replace(/^"|"$/g,"")]}));
+const BASE = "http://127.0.0.1:4173", SHOTS = new URL("./shots/", import.meta.url).pathname;
+const rest = async (path, init={}) => (await fetch(`${env.API_URL}/rest/v1/${path}`, { ...init, headers: { apikey: env.SERVICE_ROLE_KEY, Authorization: `Bearer ${env.SERVICE_ROLE_KEY}`, "Content-Type":"application/json", ...(init.headers||{}) } })).json().catch(()=>null);
+const log = (...a) => console.log("[e2e]", ...a);
+const exe = `${process.env.HOME}/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`;
+const browser = await chromium.launch({ executablePath: exe, args: ["--headless=new"] });
+const mk = async () => { const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true }); const page = await ctx.newPage(); page.on("pageerror", e => log("PAGEERROR", e.message)); page.on("console", m => { if (m.type()==="error" && !m.text().includes("Push API")) log("console.error", m.text().slice(0,160)); }); return { ctx, page }; };
+const stamp = Date.now();
+async function signup(page, name, email, redirect) {
+  await page.goto(`${BASE}/auth${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`);
+  await page.getByText("Нет аккаунта? Создать").click();
+  await page.getByPlaceholder("Ваше имя").fill(name);
+  await page.getByPlaceholder("Email").fill(email);
+  await page.getByPlaceholder(/Пароль/).fill("secret123");
+  await page.getByRole("button", { name: "Создать аккаунт" }).click();
+  await page.waitForURL(u => !u.pathname.startsWith("/auth"), { timeout: 15000 });
+  log(`signup ${name} → ${new URL(page.url()).pathname}`);
+}
+const A = await mk(), B = await mk(), anon = await mk();
+await anon.page.goto(BASE); await anon.page.waitForTimeout(1500);
+log("home listing links:", await anon.page.locator('a[href^="/listing/"]').count(), "| empty state:", await anon.page.getByText("Сейчас букетов нет").isVisible());
+await signup(A.page, "Алина", `seller${stamp}@test.kg`, "/sell");
+await A.page.locator('input[type=file]').setInputFiles(process.env.BIG_PHOTO ?? new URL("./big.jpg", import.meta.url).pathname);
+const pub = A.page.getByRole("button", { name: "Опубликовать" });
+for (let i=0;i<40;i++){ if (await A.page.getByText("Умная оценка сейчас недоступна").isVisible().catch(()=>false)) break; await A.page.waitForTimeout(300); }
+log("AI-failed hint:", await A.page.getByText("Умная оценка сейчас недоступна").isVisible(), "| publish enabled w/o price:", await pub.isEnabled());
+await A.page.getByPlaceholder("Например, 1500").fill("1800");
+await A.page.getByPlaceholder("+996 555 123 456").fill("0555 12 34 56");
+await A.page.getByText("Можно написать в WhatsApp").click();
+await A.page.getByPlaceholder(/Telegram/).fill("@alina_flowers");
+await A.page.getByText("Название и описание — необязательно").click();
+await A.page.getByPlaceholder("Название (иначе AI придумает)").fill("Букет из 25 красных роз");
+await pub.click(); await A.page.waitForURL(/catalog/, { timeout: 15000 });
+const [L] = await rest("listings?select=id,title,price,images,expires_at,created_at&order=created_at.desc&limit=1");
+log("listing:", L.title, L.price, "hours:", Math.round((new Date(L.expires_at)-new Date(L.created_at))/36e5));
+const img = await A.page.evaluate(async (u) => { const b = await (await fetch(u)).blob(); const bm = await createImageBitmap(b); return `${bm.width}x${bm.height} ${Math.round(b.size/1024)}KB`; }, L.images[0]);
+log("uploaded photo:", img);
+const html = await (await fetch(`${BASE}/listing/${L.id}`)).text();
+log("SSR title:", (html.match(/<title>([^<]*)<\/title>/)||[])[1], "| og:image is photo:", html.includes('property="og:image" content="' + env.API_URL));
+await anon.page.goto(`${BASE}/listing/${L.id}`); await anon.page.waitForTimeout(1500);
+log("anon contact buttons:", await anon.page.getByRole("button", { name: "WhatsApp" }).isVisible(), await anon.page.getByRole("button", { name: "Telegram" }).isVisible(), "| seller name:", await anon.page.getByText("Алина").first().isVisible());
+await anon.page.getByRole("button", { name: "WhatsApp" }).click(); await anon.page.waitForTimeout(800);
+log("anon WhatsApp →", new URL(anon.page.url()).pathname);
+await signup(B.page, "Бакыт", `buyer${stamp}@test.kg`, `/listing/${L.id}`);
+await B.page.waitForTimeout(1500);
+const wa = await B.page.getByRole("link", { name: "WhatsApp" }).getAttribute("href").catch(()=>null);
+log("buyer WhatsApp href ok:", !!wa && wa.startsWith("https://wa.me/996555123456?text="));
+await B.page.getByRole("button", { name: /Хочу купить/ }).last().click();
+await B.page.waitForURL(/conversation/, { timeout: 15000 }).catch(()=>{});
+log("buy → chat:", new URL(B.page.url()).pathname.startsWith("/conversation/"));
+await rest(`listings?id=eq.${L.id}`, { method: "PATCH", body: JSON.stringify({ expires_at: new Date(Date.now()-60000).toISOString() }), headers: { Prefer: "return=minimal" } });
+await anon.page.goto(`${BASE}/listing/${L.id}`); await anon.page.waitForTimeout(1000);
+log("anon after expiry → not found:", await anon.page.getByText("Букет не найден").isVisible());
+await A.page.goto(`${BASE}/profile`); await A.page.waitForTimeout(2000);
+await A.page.getByRole("button", { name: "Продлить" }).click(); await A.page.waitForTimeout(1500);
+const [L2] = await rest(`listings?select=expires_at&id=eq.${L.id}`);
+log("after extend hours left:", Math.round((new Date(L2.expires_at)-Date.now())/36e5));
+await A.page.screenshot({ path: `${SHOTS}/profile.png`, fullPage: true });
+await browser.close();

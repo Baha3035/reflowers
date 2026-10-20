@@ -32,14 +32,21 @@ printf "VITE_SUPABASE_URL=%s\nVITE_SUPABASE_PUBLISHABLE_KEY=%s\nVITE_SUPABASE_PR
 bun run build
 printf "SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_SERVICE_ROLE_KEY=%s\n" "$API_URL" "$ANON_KEY" "$SERVICE_ROLE_KEY" > .output/server/.dev.vars
 # optional push: append the output of `node scripts/generate-vapid-keys.mjs` to .dev.vars
-(cd .output/server && npx wrangler@4 dev -c wrangler.json --ip 127.0.0.1 --port 4173)
+(cd .output/server && npx -y wrangler@latest dev -c wrangler.json --ip 127.0.0.1 --port 4173)
 rm .env.local   # afterwards, so normal dev builds use .env again
 ```
 - `npx vite preview` does **not** work: the build targets Cloudflare.
+- Use `wrangler@latest`. The build stamps today's compatibility date, and an older cached Wrangler refuses to start ("requires compatibility date …").
 - Use `127.0.0.1`, not `localhost`. `src/lib/pwa.ts` turns the service worker off on `localhost`.
 - The AI bouquet analyzer needs `LOVABLE_API_KEY`. Without it, the sell page shows "Умная оценка недоступна", which is the expected fallback.
 
 ## 3. Browser
+Automated run of the main flows: `scripts/e2e/launch-flows.mjs`. It covers signup → sell → listing → contacts → buy → chat → expiry → extend.
+```sh
+mkdir -p .context/e2e/shots && cd .context/e2e && npm init -y >/dev/null && npm i playwright@1.60.0
+cp ../../scripts/e2e/launch-flows.mjs . && sips -z 3000 4000 ../../src/assets/bouquet-red-roses.jpg --out big.jpg
+SB_ENV=/tmp/rf-sb.env node launch-flows.mjs     # every line should read true / sensible values
+```
 - **Playwright with full Chromium**, not the headless shell:
   - The headless shell reports notifications as "denied".
   - Use `launchPersistentContext` for push; push doesn't work in incognito contexts.
