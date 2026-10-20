@@ -22,6 +22,13 @@
       "when": 1792490391615,
       "tag": "0002_listing_expiry_and_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792490398087,
+      "tag": "0003_public_reviews",
+      "breakpoints": true
     }
   ]
 }
