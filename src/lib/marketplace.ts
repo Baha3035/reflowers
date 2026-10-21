@@ -22,6 +22,8 @@ export interface SellerSummary {
   type: SellerType;
   name: string;
   verified: boolean;
+  /** Phone confirmed by sharing the Telegram contact with the bot. */
+  phoneVerified: boolean;
   rating: number;
   reviewsCount: number;
   createdAt?: string | null;

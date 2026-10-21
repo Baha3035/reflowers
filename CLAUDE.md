@@ -71,6 +71,22 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
   (generate with `node scripts/generate-vapid-keys.mjs`). Without them push is simply off.
 - iPhone: push works only after "Add to Home Screen" (iOS 16.4+).
 
+## Telegram bot (private: login, notifications, verified phone)
+- Secrets: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (`reflowwwersBot`), `TELEGRAM_WEBHOOK_SECRET`.
+  Optional: `TELEGRAM_WEBHOOK_URL`, `PUBLIC_SITE_URL` (links in messages, default `https://reflowers.lovable.app`),
+  `TELEGRAM_API_BASE` (tests). BotFather `/setdomain` must match the site domain or the login button shows
+  "Bot domain invalid" (expected in the Lovable preview and locally).
+- `src/lib/telegram.server.ts`: login-widget HMAC check, `telegramSignIn` (find/create user, then
+  `generateLink` magic-link token → client `verifyOtp`), link tokens, webhook update handler, notifications.
+  `src/lib/telegram.functions.ts`: server functions. `src/routes/api.telegram.webhook.ts`: webhook (checks the
+  secret header). The webhook registers itself (`ensureWebhook`, always to `PUBLIC_SITE_URL`/`TELEGRAM_WEBHOOK_URL`, never
+  the request origin) the first time someone opens «Подключить Telegram» after a deploy.
+- Telegram-only accounts use the placeholder email `tg<id>@telegram.reflowers.invalid` (never mailed).
+- Notifications reuse `push_outbox`: the dispatcher in `push.server.ts` sends each row as web push *and* Telegram.
+- `profiles.telegram_id` / `phone_verified_at` / `verified` / `rating` / `reviews_count` are protected by the
+  `tg_profiles_guard` trigger: users can't set them (unlinking Telegram = setting `telegram_id` to NULL is allowed).
+  Server code (service role) and SECURITY DEFINER triggers can. `public_profiles.phone_verified` exposes only the flag.
+
 ## Data in the UI
 - **No mock data.** Everything shown comes from the database. `src/lib/marketplace.ts` holds the
   `Listing` type, helpers (`formatSom`, `postedAgo`, `boostRank`, `DISTRICTS`) and stock images used only
@@ -95,7 +111,8 @@ what each side did (see `.lovable/plan.md`). UI copy is Russian first; `src/lib/
 - `node scripts/check-live-db.mjs`: read-only check that migrations reached the live DB. Add a line for every
   new migration.
 - The brand stays **ReFlowers** (owner decision, #25).
-- `scripts/e2e/launch-flows.mjs`: browser test of the main flows (how to run: `docs/TESTING.md` §3).
+- `scripts/e2e/launch-flows.mjs`, `auth-flows.mjs`, `telegram-flows.mjs` (+ `telegram-mock.mjs`): browser tests
+  (how to run: `docs/TESTING.md` §3).
 - One issue per task. Reference it in the branch/PR (`Closes #N`). Ask the owner before closing
   `owner-action` / `needs-decision` issues.
 - Branches/PRs: never push to `main` directly. Avoid stacked PRs. GitHub does **not** retarget a stacked PR to `main`

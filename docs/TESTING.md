@@ -77,6 +77,26 @@ EOF2
   - offline: stop the server, then navigate → offline page
 - Link previews: `curl http://127.0.0.1:4173/listing/<id> | grep og:` must show the listing title and photo.
 
+### Telegram
+`scripts/e2e/telegram-flows.mjs` runs against a mock Bot API (`scripts/e2e/telegram-mock.mjs`, port 4599) and
+fake webhook updates. Before `wrangler dev`, add these to `.output/server/.dev.vars`:
+```
+TELEGRAM_BOT_TOKEN=123456:TEST-TOKEN
+TELEGRAM_BOT_USERNAME=reflowwwersBot
+TELEGRAM_WEBHOOK_SECRET=s3cret-test
+TELEGRAM_API_BASE=http://127.0.0.1:4599
+TELEGRAM_WEBHOOK_URL=http://127.0.0.1:4173/api/telegram/webhook
+PUBLIC_SITE_URL=https://reflowers.lovable.app
+```
+It covers:
+- linking via `/start <token>`, a reused token, and the wrong webhook secret
+- contact → verified phone; someone else's contact is rejected
+- the profile guard
+- a chat message → Telegram notification; `/stop`
+- login widget: linked user, new user, forged signature
+
+It signs the login data itself, because the real widget only renders on the bot's domain.
+
 ## 4. Database checks (RLS)
 Run SQL as a given user with `docker exec -i <supabase_db container> psql -U postgres`:
 ```sql

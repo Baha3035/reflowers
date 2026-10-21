@@ -54,7 +54,7 @@ Every item is a GitHub issue; the issue is the source of truth for scope and sta
 
 ## Suggested order
 1. Merge #26, apply its migrations, publish (#2), hide the badge (#3). Seed the feed: ask 10–20 friends to post real bouquets.
-2. #5 (bot notifications) and #4 (Telegram login): the bot exists; its secrets go into Lovable.
+2. #5 (bot notifications) and #4 (Telegram login): built; switch on per `docs/OWNER_ACTIONS.md`.
 3. #9 (terms + reports + strikes), #7, #8, then #10.
 4. Then #17 (pay for promotion), shops (#18), and the custom domain (#20) before any marketing push.
 

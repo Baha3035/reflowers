@@ -32,6 +32,15 @@ architecture choice that a future agent could otherwise undo.
 ## 2026-10-15: No auctions in v1
 - **Why (owner):** not needed for launch. Second Bloom's own volume moved to fixed price. #16 stays at P3.
 
+## 2026-10-21: Telegram login, private notifications and verified phone
+- **Login:** the official Telegram Login Widget, not OIDC; Lovable Cloud doesn't confirm custom providers.
+  - The server checks the HMAC, then signs the user into a Supabase account through a one-time magic-link token. No email is sent.
+  - New Telegram users get a placeholder email `tg<id>@telegram.reflowers.invalid`.
+  - Existing email users link Telegram from /notifications first; after that, Telegram login opens the same account.
+- **Notifications:** the same `push_outbox` as web push, sent as a bot DM with an «Открыть» button. `/stop` / `/notify` or the switch on /notifications turn them off and on. A user who blocks the bot is switched off automatically.
+- **Verified phone:** only when the user shares their **own** contact with the bot (Telegram proves it) and it's +996. Changing the phone on the site drops the verification.
+- **Security fix bundled in:** users could set `verified`, `rating` and `reviews_count` on their own profile through the API. A guard trigger now blocks that.
+
 ## 2026-10-20: The brand stays "ReFlowers"; no domain for now
 - **Why (owner):** fine as is. #25 is closed and the shortlist (Kairagul, NaBis, BuketTap) is kept in the issue.
 - **Consequences:**

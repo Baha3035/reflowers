@@ -227,6 +227,11 @@ function ListingPage() {
               </div>
               <span className="text-xs text-muted-foreground">Открыть →</span>
             </Link>
+            {seller?.phoneVerified && (
+              <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] text-accent-foreground">
+                <BadgeCheck className="h-3 w-3" /> Номер подтверждён
+              </div>
+            )}
 
             {notActive ? (
               <div className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-center text-sm font-medium text-destructive">

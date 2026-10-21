@@ -55,6 +55,8 @@ const checks = [
   ["20261013090000 extend_listing()", () => rpc("extend_listing", { _listing_id: ZERO })],
   // Must be readable by visitors, not just exist.
   ["20261015090000 reviews public", () => probe("reviews?select=id&limit=1"), { publicOnly: true }],
+  ["20261021090000 public_profiles.phone_verified", () => probe("public_profiles?select=phone_verified&limit=1")],
+  ["20261021090000 telegram_link_tokens", () => probe("telegram_link_tokens?select=token&limit=1")],
 ];
 
 console.log(`Database: ${URL_}\n`);
