@@ -511,14 +511,11 @@ export type Database = {
           district: string | null
           id: string
           phone: string | null
-          phone_verified_at: string | null
           rating: number
           reviews_count: number
           seller_type: Database["public"]["Enums"]["seller_type"]
           shop_name: string | null
-          telegram_id: number | null
           telegram_username: string | null
-          telegram_notify: boolean
           updated_at: string
           verified: boolean
         }
@@ -533,14 +530,11 @@ export type Database = {
           district?: string | null
           id: string
           phone?: string | null
-          phone_verified_at?: string | null
           rating?: number
           reviews_count?: number
           seller_type?: Database["public"]["Enums"]["seller_type"]
           shop_name?: string | null
-          telegram_id?: number | null
           telegram_username?: string | null
-          telegram_notify?: boolean
           updated_at?: string
           verified?: boolean
         }
@@ -555,14 +549,11 @@ export type Database = {
           district?: string | null
           id?: string
           phone?: string | null
-          phone_verified_at?: string | null
           rating?: number
           reviews_count?: number
           seller_type?: Database["public"]["Enums"]["seller_type"]
           shop_name?: string | null
-          telegram_id?: number | null
           telegram_username?: string | null
-          telegram_notify?: boolean
           updated_at?: string
           verified?: boolean
         }
@@ -733,27 +724,6 @@ export type Database = {
           },
         ]
       }
-      telegram_link_tokens: {
-        Row: {
-          created_at: string
-          token: string
-          used_at: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          token: string
-          used_at?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          token?: string
-          used_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -786,7 +756,6 @@ export type Database = {
           display_name: string | null
           district: string | null
           id: string | null
-          phone_verified: boolean | null
           rating: number | null
           reviews_count: number | null
           seller_type: Database["public"]["Enums"]["seller_type"] | null
@@ -801,7 +770,6 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           id?: string | null
-          phone_verified?: boolean | null
           rating?: number | null
           reviews_count?: number | null
           seller_type?: Database["public"]["Enums"]["seller_type"] | null
@@ -816,7 +784,6 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           id?: string | null
-          phone_verified?: boolean | null
           rating?: number | null
           reviews_count?: number | null
           seller_type?: Database["public"]["Enums"]["seller_type"] | null
