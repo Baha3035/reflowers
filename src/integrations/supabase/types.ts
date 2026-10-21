@@ -517,8 +517,8 @@ export type Database = {
           seller_type: Database["public"]["Enums"]["seller_type"]
           shop_name: string | null
           telegram_id: number | null
-          telegram_username: string | null
           telegram_notify: boolean
+          telegram_username: string | null
           updated_at: string
           verified: boolean
         }
@@ -539,8 +539,8 @@ export type Database = {
           seller_type?: Database["public"]["Enums"]["seller_type"]
           shop_name?: string | null
           telegram_id?: number | null
-          telegram_username?: string | null
           telegram_notify?: boolean
+          telegram_username?: string | null
           updated_at?: string
           verified?: boolean
         }
@@ -561,8 +561,8 @@ export type Database = {
           seller_type?: Database["public"]["Enums"]["seller_type"]
           shop_name?: string | null
           telegram_id?: number | null
-          telegram_username?: string | null
           telegram_notify?: boolean
+          telegram_username?: string | null
           updated_at?: string
           verified?: boolean
         }
@@ -801,7 +801,7 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           id?: string | null
-          phone_verified?: boolean | null
+          phone_verified?: never
           rating?: number | null
           reviews_count?: number | null
           seller_type?: Database["public"]["Enums"]["seller_type"] | null
@@ -816,7 +816,7 @@ export type Database = {
           display_name?: string | null
           district?: string | null
           id?: string | null
-          phone_verified?: boolean | null
+          phone_verified?: never
           rating?: number | null
           reviews_count?: number | null
           seller_type?: Database["public"]["Enums"]["seller_type"] | null

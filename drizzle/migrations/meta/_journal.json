@@ -29,6 +29,13 @@
       "when": 1792490398087,
       "tag": "0003_public_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792571683969,
+      "tag": "0004_telegram",
+      "breakpoints": true
     }
   ]
 }
